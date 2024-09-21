@@ -1,10 +1,15 @@
+import 'dart:developer';
+
 import 'package:delivery_app/pages/login.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
 class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
+
   @override
+  // ignore: library_private_types_in_public_api
   _SignUpScreenState createState() => _SignUpScreenState();
 }
 
@@ -25,9 +30,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _isPhoneValid = false;
 
   Future<void> _pickImage() async {
-    final ImagePicker _picker = ImagePicker();
+    final ImagePicker picker = ImagePicker();
     final XFile? pickedFile =
-        await _picker.pickImage(source: ImageSource.gallery);
+        await picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
       setState(() {
@@ -41,11 +46,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Error'),
+          title: const Text('Error'),
           content: Text(message),
           actions: <Widget>[
             TextButton(
-              child: Text('OK'),
+              child: const Text('OK'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -60,12 +65,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Sign up'),
+        title: const Text('Sign up'),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
@@ -90,8 +95,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         bottom: 0,
                         right: 0,
                         child: Container(
-                          padding: EdgeInsets.all(4),
-                          decoration: BoxDecoration(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
                             color: Colors.white,
                             shape: BoxShape.circle,
                           ),
@@ -103,15 +108,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(
                   labelText: 'NAME',
                   suffixIcon: _isNameValid
-                      ? Icon(Icons.check, color: Colors.green)
+                      ? const Icon(Icons.check, color: Colors.green)
                       : null,
-                  border: UnderlineInputBorder(),
+                  border: const UnderlineInputBorder(),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -129,15 +134,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   });
                 },
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _emailController,
                 decoration: InputDecoration(
                   labelText: 'EMAIL',
                   suffixIcon: _isEmailValid
-                      ? Icon(Icons.check, color: Colors.green)
+                      ? const Icon(Icons.check, color: Colors.green)
                       : null,
-                  border: UnderlineInputBorder(),
+                  border: const UnderlineInputBorder(),
                 ),
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
@@ -156,7 +161,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   });
                 },
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _passwordController,
                 decoration: InputDecoration(
@@ -174,7 +179,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       });
                     },
                   ),
-                  border: UnderlineInputBorder(),
+                  border: const UnderlineInputBorder(),
                 ),
                 obscureText: !_isPasswordVisible,
                 validator: (value) {
@@ -184,7 +189,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   return null;
                 },
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _confirmPasswordController,
                 decoration: InputDecoration(
@@ -202,7 +207,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       });
                     },
                   ),
-                  border: UnderlineInputBorder(),
+                  border: const UnderlineInputBorder(),
                 ),
                 obscureText: !_isConfirmPasswordVisible,
                 validator: (value) {
@@ -215,16 +220,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   return null;
                 },
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _phoneController,
                 decoration: InputDecoration(
                   labelText: 'PHONE NUMBER',
                   prefixText: '+66 ',
                   suffixIcon: _isPhoneValid
-                      ? Icon(Icons.check, color: Colors.green)
+                      ? const Icon(Icons.check, color: Colors.green)
                       : null,
-                  border: UnderlineInputBorder(),
+                  border: const UnderlineInputBorder(),
                 ),
                 keyboardType: TextInputType.phone,
                 validator: (value) {
@@ -243,54 +248,54 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   });
                 },
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               ElevatedButton(
-                child: Text('SIGN UP'),
                 style: ElevatedButton.styleFrom(
                   foregroundColor: Colors.white,
                   backgroundColor: Colors.red,
-                  padding: EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
                 onPressed: () {
                   if (_formKey.currentState!.validate()) {
                     // Perform sign up logic
-                    print('Sign up successful');
+                    log('Sign up successful');
                   } else {
                     _showErrorDialog('กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง');
                   }
                 },
+                child: const Text('SIGN UP'),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Already have an account? '),
+                  const Text('Already have an account? '),
                   GestureDetector(
                     child:
-                        Text('Sign in.', style: TextStyle(color: Colors.red)),
+                        const Text('Sign in.', style: TextStyle(color: Colors.red)),
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => LoginScreen()),
+                        MaterialPageRoute(builder: (context) => const LoginScreen()),
                       );
                     },
                   ),
                 ],
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   IconButton(
-                    icon: Icon(Icons.facebook, color: Colors.blue),
+                    icon: const Icon(Icons.facebook, color: Colors.blue),
                     onPressed: () {},
                   ),
                   IconButton(
-                    icon: Icon(Icons.alternate_email, color: Colors.lightBlue),
+                    icon: const Icon(Icons.alternate_email, color: Colors.lightBlue),
                     onPressed: () {},
                   ),
                   IconButton(
-                    icon: Text('G',
+                    icon: const Text('G',
                         style: TextStyle(
                             color: Colors.red,
                             fontWeight: FontWeight.bold,

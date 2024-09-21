@@ -1,8 +1,12 @@
+import 'package:delivery_app/pages/home/home-re.dart';
 import 'package:delivery_app/pages/register.dart';
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
+  // ignore: library_private_types_in_public_api
   _LoginScreenState createState() => _LoginScreenState();
 }
 
@@ -28,15 +32,15 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(height: 40),
-                  Text(
+                  const SizedBox(height: 40),
+                  const Text(
                     'Sign In',
                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 40),
+                  const SizedBox(height: 40),
                   TextFormField(
                     controller: _phoneController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Phone number',
                       prefixText: '+66 ',
                       border: OutlineInputBorder(),
@@ -49,10 +53,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       return null;
                     },
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   TextFormField(
                     controller: _passwordController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Password',
                       border: OutlineInputBorder(),
                       suffixIcon: Icon(Icons.visibility_off),
@@ -69,29 +73,32 @@ class _LoginScreenState extends State<LoginScreen> {
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: () {},
-                      child: Text('Forgot password?'),
+                      child: const Text('Forgot password?'),
                     ),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        // หากฟอร์มถูกต้อง จะทำการเข้าสู่ระบบ
-                        print('Form is valid');
-                      }
+                      // if (_formKey.currentState!.validate()) {
+                      //   // หากฟอร์มถูกต้อง จะทำการเข้าสู่ระบบ
+                      //   print('Form is valid');
+                      // }
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(builder: (context) => const FoodHomeScreen()),
+                    );
                     },
-                    child: Text('SIGN IN'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
-                      minimumSize: Size(double.infinity, 50),
+                      minimumSize: const Size(double.infinity, 50),
                     ),
+                    child: const Text('SIGN IN'),
                   ),
-                  Spacer(),
+                  const Spacer(),
                   Center(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text("Don't have an account? "),
+                        const Text("Don't have an account? "),
                         GestureDetector(
                           onTap: () {
                             Navigator.push(
@@ -100,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   builder: (context) => SignUpScreen()),
                             );
                           },
-                          child: Text(
+                          child: const Text(
                             "Sign up",
                             style: TextStyle(
                               color: Colors.red,
@@ -111,20 +118,20 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       IconButton(
-                        icon: Icon(Icons.facebook),
+                        icon: const Icon(Icons.facebook),
                         onPressed: () {},
                       ),
                       IconButton(
-                        icon: Icon(Icons.alternate_email),
+                        icon: const Icon(Icons.alternate_email),
                         onPressed: () {},
                       ),
                       IconButton(
-                        icon: Icon(Icons.g_mobiledata),
+                        icon: const Icon(Icons.g_mobiledata),
                         onPressed: () {},
                       ),
                     ],
@@ -142,16 +149,16 @@ class _LoginScreenState extends State<LoginScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Exit App'),
-        content: Text('Do you want to exit the app?'),
+        title: const Text('Exit App'),
+        content: const Text('Do you want to exit the app?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: Text('No'),
+            child: const Text('No'),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text('Yes'),
+            child: const Text('Yes'),
           ),
         ],
       ),
