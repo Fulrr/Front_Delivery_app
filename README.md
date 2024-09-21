@@ -1,3 +1,5 @@
+flutter pub get
+
 # delivery_app
 
 A new Flutter project.
