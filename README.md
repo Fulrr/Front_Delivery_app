@@ -1,4 +1,4 @@
-flutter pub get
+-flutter pub get
 
 # delivery_app
 
