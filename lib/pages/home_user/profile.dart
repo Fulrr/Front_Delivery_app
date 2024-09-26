@@ -1,4 +1,5 @@
-import 'package:delivery_app/pages/home/home-re.dart';
+import 'package:delivery_app/pages/food-OR-setting/edit_profile.dart';
+import 'package:delivery_app/pages/home_user/home-re.dart';
 import 'package:delivery_app/pages/login.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -76,7 +77,7 @@ class _FoodProfileScreenState extends State<FoodProfileScreen> {
           IconButton(
             icon: const Icon(Icons.edit, color: Colors.white),
             onPressed: () {
-              // Handle edit profile
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const EditProfile()));
             },
           ),
         ],
@@ -102,35 +103,39 @@ class _FoodProfileScreenState extends State<FoodProfileScreen> {
       children: [
         ListTile(
           leading: Icon(icon, color: Colors.grey),
-          title: Text(title),
+          title: Text(
+            title,
+            style: GoogleFonts.lato(), // Apply font style here
+          ),
           trailing: const Icon(Icons.chevron_right, color: Colors.grey),
           onTap: () {
             setState(() {
-          _selectedIndex = index;
-        });
-        switch (_selectedIndex) {
-          case 0:
-            // Navigator.push(context, MaterialPageRoute(builder: (context) => FoodHomeScreen()));
-            break;
-          case 1:
-            // Navigator.push(context, MaterialPageRoute(builder: (context) => FoodProfileScreen()));
-            break;
-          case 2:
-            // Navigator.push(context, MaterialPageRoute(builder: (context) => FoodHomeScreen()));
-            break;
-          case 3:
-            // Navigator.push(context, MaterialPageRoute(builder: (context) => FoodHomeScreen()));
-            break;
-          case 4:
-            // Navigator.push(context, MaterialPageRoute(builder: (context) => FoodHomeScreen()));
-            break;
-          case 5:
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
-            break;
-        }
+              _selectedIndex = index;
+            });
+            switch (_selectedIndex) {
+              case 0:
+                // Handle Order History
+                break;
+              case 1:
+                // Handle Payment Method
+                break;
+              case 2:
+                // Handle My Address
+                break;
+              case 3:
+                // Handle My Promocodes
+                break;
+              case 4:
+                // Handle My Favorite
+                break;
+              case 5:
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
+                break;
+            }
           },
         ),
-        // if (!isLast) const Divider(height: 1),
+        // Optional: Uncomment if you want a divider
+        // if (index < 5) const Divider(height: 1),
       ],
     );
   }
@@ -177,17 +182,16 @@ class _FoodProfileScreenState extends State<FoodProfileScreen> {
         });
         switch (_selectedIndex) {
           case 0:
-            Navigator.push(context,
-                MaterialPageRoute(builder: (context) => const FoodHomeScreen()));
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const FoodHomeScreen()));
             break;
           case 1:
-            // Navigator.push(context, MaterialPageRoute(builder: (context) => FoodProfileScreen()));
+            // Do nothing as it's the current screen
             break;
           case 2:
-            // Navigator.push(context, MaterialPageRoute(builder: (context) => FoodHomeScreen()));
+            // Handle Cart
             break;
           case 3:
-            // Navigator.push(context, MaterialPageRoute(builder: (context) => FoodHomeScreen()));
+            // Handle Favorites
             break;
         }
       },
