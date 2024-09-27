@@ -1,7 +1,9 @@
 import 'package:delivery_app/pages/food-OR-setting/edit_profile.dart';
+import 'package:delivery_app/pages/food-OR-setting/histrory.dart';
 import 'package:delivery_app/pages/home_user/home-re.dart';
 import 'package:delivery_app/pages/login.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class FoodProfileScreen extends StatefulWidget {
@@ -34,8 +36,8 @@ class _FoodProfileScreenState extends State<FoodProfileScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            _buildProfileHeader(),
-            _buildProfileOptions(),
+            _buildProfileHeader().animate().fadeIn(),
+            _buildProfileOptions().animate().fadeIn(),
           ],
         ),
       ),
@@ -53,7 +55,8 @@ class _FoodProfileScreenState extends State<FoodProfileScreen> {
         children: [
           const CircleAvatar(
             radius: 30,
-            backgroundImage: NetworkImage('https://i.pinimg.com/564x/43/6b/47/436b47519f01232a329d90f75dbeb3f4.jpg'),
+            backgroundImage: NetworkImage(
+                'https://i.pinimg.com/564x/43/6b/47/436b47519f01232a329d90f75dbeb3f4.jpg'),
           ),
           const SizedBox(width: 16),
           const Expanded(
@@ -77,7 +80,8 @@ class _FoodProfileScreenState extends State<FoodProfileScreen> {
           IconButton(
             icon: const Icon(Icons.edit, color: Colors.white),
             onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const EditProfile()));
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => const EditProfile()));
             },
           ),
         ],
@@ -114,7 +118,11 @@ class _FoodProfileScreenState extends State<FoodProfileScreen> {
             });
             switch (_selectedIndex) {
               case 0:
-                // Handle Order History
+                 Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                             OrderHistoryPage()));
                 break;
               case 1:
                 // Handle Payment Method
@@ -129,7 +137,11 @@ class _FoodProfileScreenState extends State<FoodProfileScreen> {
                 // Handle My Favorite
                 break;
               case 5:
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            const LoginScreen().animate().moveX()));
                 break;
             }
           },
@@ -182,7 +194,16 @@ class _FoodProfileScreenState extends State<FoodProfileScreen> {
         });
         switch (_selectedIndex) {
           case 0:
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const FoodHomeScreen()));
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const FoodHomeScreen()
+                    .animate()
+                    .slideX(
+                      begin: -1,
+                      end: 0,
+                      curve: Curves.ease
+                    )));
             break;
           case 1:
             // Do nothing as it's the current screen

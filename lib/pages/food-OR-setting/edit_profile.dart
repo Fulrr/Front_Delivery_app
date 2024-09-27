@@ -57,13 +57,14 @@ class _EditProfileState extends State<EditProfile> {
                       CircleAvatar(
                         radius: 60,
                         backgroundColor: Colors.grey[300],
-                        backgroundImage: const NetworkImage(
-                            'https://i.pinimg.com/564x/43/6b/47/436b47519f01232a329d90f75dbeb3f4.jpg'),
-                        // _image != null ? FileImage(_image!) : null,
-                        // child: _image == null
-                        //     ? Icon(Icons.person,
-                        //         size: 50, color: Colors.grey[600])
-                        //     : null,
+                        // backgroundImage: const NetworkImage(
+                        //     'https://i.pinimg.com/564x/43/6b/47/436b47519f01232a329d90f75dbeb3f4.jpg'),
+                        backgroundImage:
+                        _image != null ? FileImage(_image!) : null,
+                        child: _image == null
+                            ? Icon(Icons.person,
+                                size: 50, color: Colors.grey[600])
+                            : null,
                       ),
                       Positioned(
                         bottom: 0,

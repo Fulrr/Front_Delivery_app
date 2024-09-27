@@ -3,6 +3,7 @@
 import 'package:delivery_app/pages/food-OR-setting/choose_food.dart';
 import 'package:delivery_app/pages/home_user/profile.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -45,7 +46,8 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
           children: [
             Text(
               'Order your favourite food!',
-              style: GoogleFonts.lato(fontSize: 18, fontWeight: FontWeight.bold),
+              style:
+                  GoogleFonts.fredoka(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             _buildSearchField(),
@@ -71,7 +73,7 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
           borderRadius: BorderRadius.circular(30),
         ),
       ),
-      style: GoogleFonts.lato(), // Apply font style here
+      style: GoogleFonts.fredoka(), // Apply font style here
     );
   }
 
@@ -146,9 +148,17 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
         switch (_selectedIndex) {
           case 1:
             Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const FoodProfileScreen()));
+              context,
+              MaterialPageRoute(
+                builder: (context) => const FoodProfileScreen()
+                    .animate()
+                    .slideX(
+                      begin: 1,
+                      end: 0,
+                      curve: Curves.ease
+                      ),
+              ),
+            );
             break;
         }
       },
@@ -204,7 +214,7 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
       child: Chip(
         label: Text(
           label,
-          style: GoogleFonts.lato(), // Apply font style here
+          style: GoogleFonts.fredoka(), // Apply font style here
         ),
         backgroundColor: isSelected ? Colors.red : Colors.grey[200],
         labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black),
@@ -253,11 +263,11 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.lato(fontWeight: FontWeight.bold),
+                    style: GoogleFonts.fredoka(fontWeight: FontWeight.bold),
                   ),
                   Text(
                     subtitle,
-                    style: GoogleFonts.lato(),
+                    style: GoogleFonts.fredoka(),
                   ),
                   Row(
                     children: [
@@ -265,7 +275,7 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
                       const SizedBox(width: 4),
                       Text(
                         rating.toString(),
-                        style: GoogleFonts.lato(),
+                        style: GoogleFonts.fredoka(),
                       ),
                     ],
                   ),

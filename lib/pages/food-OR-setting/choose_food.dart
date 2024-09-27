@@ -1,5 +1,6 @@
 // ignore_for_file: library_private_types_in_public_api, deprecated_member_use
 
+import 'package:delivery_app/pages/food-OR-setting/pay-food.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -18,7 +19,7 @@ class _FoodOrderComponentState extends State<FoodOrderComponent> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        // backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.grey),
       ),
@@ -124,7 +125,7 @@ class _FoodOrderComponentState extends State<FoodOrderComponent> {
                         ),
                         ElevatedButton(
                           onPressed: () {
-                            // Add order action
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => const PaymentPage()));
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.black,
