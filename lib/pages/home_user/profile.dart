@@ -16,6 +16,7 @@ class FoodProfileScreen extends StatefulWidget {
 
 class _FoodProfileScreenState extends State<FoodProfileScreen> {
   int _selectedIndex = 1; // Set to 1 for Profile tab
+  String userType = 'user';
 
   @override
   Widget build(BuildContext context) {
@@ -118,11 +119,10 @@ class _FoodProfileScreenState extends State<FoodProfileScreen> {
             });
             switch (_selectedIndex) {
               case 0:
-                 Navigator.push(
+                Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) =>
-                             OrderHistoryPage()));
+                        builder: (context) => OrderHistoryPage()));
                 break;
               case 1:
                 // Handle Payment Method
@@ -198,12 +198,8 @@ class _FoodProfileScreenState extends State<FoodProfileScreen> {
                 context,
                 MaterialPageRoute(
                     builder: (context) => const FoodHomeScreen()
-                    .animate()
-                    .slideX(
-                      begin: -1,
-                      end: 0,
-                      curve: Curves.ease
-                    )));
+                        .animate()
+                        .slideX(begin: -1, end: 0, curve: Curves.ease)));
             break;
           case 1:
             // Do nothing as it's the current screen

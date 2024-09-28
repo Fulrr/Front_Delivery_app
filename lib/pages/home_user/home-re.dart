@@ -46,8 +46,8 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
           children: [
             Text(
               'Order your favourite food!',
-              style:
-                  GoogleFonts.fredoka(fontSize: 18, fontWeight: FontWeight.bold),
+              style: GoogleFonts.fredoka(
+                  fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             _buildSearchField(),
@@ -152,11 +152,7 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
               MaterialPageRoute(
                 builder: (context) => const FoodProfileScreen()
                     .animate()
-                    .slideX(
-                      begin: 1,
-                      end: 0,
-                      curve: Curves.ease
-                      ),
+                    .slideX(begin: 1, end: 0, curve: Curves.ease),
               ),
             );
             break;

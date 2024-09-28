@@ -1,27 +1,145 @@
+import 'dart:convert';
+import 'package:delivery_app/pages/home-rider/home-rider.dart';
 import 'package:delivery_app/pages/home_user/home-re.dart';
 import 'package:delivery_app/pages/register.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:developer' as dev;
+import 'package:delivery_app/config/config.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({Key? key}) : super(key: key);
 
   @override
-  // ignore: library_private_types_in_public_api
   _LoginScreenState createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
+  late SharedPreferences prefs;
+  String errorMessage = '';
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    initSharedPref();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _animation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void initSharedPref() async {
+    prefs = await SharedPreferences.getInstance();
+  }
+
+  void loginUser() async {
+    if (_formKey.currentState!.validate()) {
+      var reqBody = {
+        "phone": _phoneController.text,
+        "password": _passwordController.text,
+      };
+
+      try {
+        var response = await http.post(Uri.parse(login),
+            headers: {"Content-Type": "application/json"},
+            body: jsonEncode(reqBody));
+
+        var jsonResponse = jsonDecode(response.body);
+        if (jsonResponse['status']) {
+          var myToken = jsonResponse['token'];
+          var userType = jsonResponse['userType'];
+          prefs.setString('token', myToken);
+          prefs.setString('userType', userType);
+
+          if (userType == 'user') {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const FoodHomeScreen()),
+            );
+          } else if (userType == 'rider') {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => HomeRiderPage()),
+            );
+          }
+        } else {
+          _showErrorSnackBar("Login failed. Please check your credentials.");
+          dev.log(
+              'Login failed: ${jsonResponse['message'] ?? "Unknown error"}');
+        }
+      } catch (e) {
+        _showErrorSnackBar("An error occurred. Please try again later.");
+        dev.log('Error during login: $e');
+      }
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+      ),
+    );
+  }
+
+  void _showExitDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Exit App'),
+        content: const Text('Do you want to exit the app?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Yes'),
+          ),
+        ],
+      ),
+    ).then((value) {
+      if (value == true) {
+        // Use SystemNavigator.pop() to close the app
+        // SystemNavigator.pop();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    // ignore: deprecated_member_use
     return WillPopScope(
       onWillPop: () async {
         _showExitDialog(context);
-        return false; // ป้องกันไม่ให้ปิดหน้าจอด้วยการกดย้อนกลับ
+        return false; // Prevents closing the screen by pressing back
       },
       child: Scaffold(
         body: SafeArea(
@@ -48,7 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     keyboardType: TextInputType.phone,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'กรุณากรอกหมายเลขโทรศัพท์'; // ข้อความแจ้งเตือนภาษาไทย
+                        return 'กรุณากรอกหมายเลขโทรศัพท์';
                       }
                       return null;
                     },
@@ -64,35 +182,21 @@ class _LoginScreenState extends State<LoginScreen> {
                     obscureText: true,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'กรุณากรอกรหัสผ่าน'; // ข้อความแจ้งเตือนภาษาไทย
+                        return 'กรุณากรอกรหัสผ่าน';
                       }
                       return null;
                     },
                   ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {},
-                      child: const Text('Forgot password?'),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   ElevatedButton(
-                    onPressed: () {
-                      // if (_formKey.currentState!.validate()) {
-                      //   // หากฟอร์มถูกต้อง จะทำการเข้าสู่ระบบ
-                      //   print('Form is valid');
-                      // }
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (context) => const FoodHomeScreen()),
-                    );
-                    },
+                    onPressed: loginUser,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                       minimumSize: const Size(double.infinity, 50),
                     ),
                     child: const Text('SIGN IN'),
                   ),
+                  const SizedBox(height: 16),
                   const Spacer(),
                   Center(
                     child: Row(
@@ -143,30 +247,5 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
-  }
-
-  void _showExitDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Exit App'),
-        content: const Text('Do you want to exit the app?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('No'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Yes'),
-          ),
-        ],
-      ),
-    ).then((value) {
-      if (value == true) {
-        // ใช้ SystemNavigator.pop() เพื่อปิดแอป
-        // SystemNavigator.pop();
-      }
-    });
   }
 }
