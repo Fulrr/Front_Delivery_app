@@ -1,5 +1,4 @@
 import 'dart:developer';
-
 import 'package:delivery_app/pages/login.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -24,10 +23,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _addressController = TextEditingController(); // New field for address
+  final _latitudeController = TextEditingController(); // New field for latitude
+  final _longitudeController =
+      TextEditingController(); // New field for longitude
 
   bool _isNameValid = false;
   bool _isEmailValid = false;
   bool _isPhoneValid = false;
+  bool _isAddressValid = false;
+  bool _isLatitudeValid = false;
+  bool _isLongitudeValid = false;
 
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
@@ -248,6 +254,32 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   });
                 },
               ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _addressController, // New field for address
+                decoration: InputDecoration(
+                  labelText: 'ADDRESS',
+                  suffixIcon: _isAddressValid
+                      ? const Icon(Icons.check, color: Colors.green)
+                      : null,
+                  border: const UnderlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'กรุณากรอกที่อยู่';
+                  } else {
+                    setState(() {
+                      _isAddressValid = true;
+                    });
+                  }
+                  return null;
+                },
+                onChanged: (value) {
+                  setState(() {
+                    _isAddressValid = value.isNotEmpty;
+                  });
+                },
+              ),
               const SizedBox(height: 24),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -259,6 +291,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   if (_formKey.currentState!.validate()) {
                     // Perform sign up logic
                     log('Sign up successful');
+                    // Here you can send the data to your backend or any further processing
                   } else {
                     _showErrorDialog('กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง');
                   }
@@ -271,12 +304,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 children: [
                   const Text('Already have an account? '),
                   GestureDetector(
-                    child:
-                        const Text('Sign in.', style: TextStyle(color: Colors.red)),
+                    child: const Text('Sign in.',
+                        style: TextStyle(color: Colors.red)),
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const LoginScreen()),
+                        MaterialPageRoute(
+                            builder: (context) => const LoginScreen()),
                       );
                     },
                   ),
@@ -291,7 +325,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     onPressed: () {},
                   ),
                   IconButton(
-                    icon: const Icon(Icons.alternate_email, color: Colors.lightBlue),
+                    icon: const Icon(Icons.alternate_email,
+                        color: Colors.lightBlue),
                     onPressed: () {},
                   ),
                   IconButton(

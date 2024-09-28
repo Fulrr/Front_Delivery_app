@@ -1,3 +1,4 @@
+import 'package:delivery_app/pages/food-OR-setting/edit_profile.dart';
 import 'package:delivery_app/pages/home-rider/Delivery_Details_Page.dart';
 import 'package:delivery_app/pages/home-rider/profile_rider.dart';
 import 'package:delivery_app/pages/login.dart'; // Import LoginScreen
@@ -139,7 +140,7 @@ class _HomeRiderPageState extends State<HomeRiderPage> {
         // Navigate to RiderProfileScreen
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => RiderProfileScreen()),
+          MaterialPageRoute(builder: (context) => EditProfile()),
         );
         break;
       case 1:
