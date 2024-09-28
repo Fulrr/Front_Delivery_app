@@ -1,5 +1,6 @@
 import 'package:delivery_app/pages/food-OR-setting/edit_profile.dart';
 import 'package:delivery_app/pages/food-OR-setting/histrory.dart';
+import 'package:delivery_app/pages/food-OR-setting/payment.dart';
 import 'package:delivery_app/pages/home_user/home-re.dart';
 import 'package:delivery_app/pages/login.dart';
 import 'package:flutter/material.dart';
@@ -125,7 +126,10 @@ class _FoodProfileScreenState extends State<FoodProfileScreen> {
                         builder: (context) => OrderHistoryPage()));
                 break;
               case 1:
-                // Handle Payment Method
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const PaymentMethodPage()));
                 break;
               case 2:
                 // Handle My Address
