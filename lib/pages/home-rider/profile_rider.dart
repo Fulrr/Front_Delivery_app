@@ -1,7 +1,6 @@
-import 'package:delivery_app/pages/food-OR-setting/edit_profile.dart';
-import 'package:delivery_app/pages/food-OR-setting/histrory.dart';
+import 'package:delivery_app/pages/list-on-profile-users/edit_profile.dart';
+import 'package:delivery_app/pages/list-on-profile-users/histrory.dart';
 import 'package:delivery_app/pages/home-rider/home-rider.dart';
-import 'package:delivery_app/pages/home_user/home-re.dart';
 import 'package:delivery_app/pages/login.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';

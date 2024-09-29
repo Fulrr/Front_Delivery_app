@@ -1,11 +1,15 @@
-import 'package:delivery_app/pages/food-OR-setting/edit_profile.dart';
+// ignore_for_file: file_names
+
+import 'package:delivery_app/pages/list-on-profile-users/edit_profile.dart';
 import 'package:delivery_app/pages/home-rider/Delivery_Details_Page.dart';
-import 'package:delivery_app/pages/home-rider/profile_rider.dart';
 import 'package:delivery_app/pages/login.dart'; // Import LoginScreen
 import 'package:flutter/material.dart';
 
 class HomeRiderPage extends StatefulWidget {
+  const HomeRiderPage({super.key});
+
   @override
+  // ignore: library_private_types_in_public_api
   _HomeRiderPageState createState() => _HomeRiderPageState();
 }
 
@@ -16,7 +20,7 @@ class _HomeRiderPageState extends State<HomeRiderPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Delivery'),
+        title: const Text('Delivery'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -24,8 +28,8 @@ class _HomeRiderPageState extends State<HomeRiderPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
+          const Padding(
+            padding: EdgeInsets.all(16.0),
             child: Text(
               'Menus',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -36,26 +40,26 @@ class _HomeRiderPageState extends State<HomeRiderPage> {
               itemCount: 5,
               itemBuilder: (context, index) {
                 return Card(
-                  margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: ListTile(
                     leading: Container(
                       width: 60,
                       height: 60,
                       color: Colors.grey[300],
                     ),
-                    title: Text('Chicken Bhuna'),
-                    subtitle: Text('\$30'),
+                    title: const Text('Chicken Bhuna'),
+                    subtitle: const Text('\$30'),
                     trailing: ElevatedButton(
-                      child: Text('รับงาน'),
                       onPressed: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => DeliveryDetailsPage()),
+                              builder: (context) => const DeliveryDetailsPage()),
                         );
                       },
                       style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.orange),
+                      child: const Text('รับงาน'),
                     ),
                   ),
                 );
@@ -140,7 +144,7 @@ class _HomeRiderPageState extends State<HomeRiderPage> {
         // Navigate to RiderProfileScreen
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => EditProfile()),
+          MaterialPageRoute(builder: (context) => const EditProfile()),
         );
         break;
       case 1:
@@ -149,7 +153,7 @@ class _HomeRiderPageState extends State<HomeRiderPage> {
       case 2:
         // Navigate to LoginScreen
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => LoginScreen()),
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
           (Route<dynamic> route) => false,
         );
         break;

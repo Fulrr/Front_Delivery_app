@@ -1,6 +1,7 @@
-import 'package:delivery_app/pages/food-OR-setting/edit_profile.dart';
-import 'package:delivery_app/pages/food-OR-setting/histrory.dart';
-import 'package:delivery_app/pages/food-OR-setting/payment.dart';
+import 'package:delivery_app/pages/list-on-profile-users/edit_profile.dart';
+import 'package:delivery_app/pages/list-on-profile-users/histrory.dart';
+import 'package:delivery_app/pages/list-on-profile-users/my-addr.dart';
+import 'package:delivery_app/pages/list-on-profile-users/payment.dart';
 import 'package:delivery_app/pages/home_user/home-re.dart';
 import 'package:delivery_app/pages/login.dart';
 import 'package:flutter/material.dart';
@@ -132,7 +133,10 @@ class _FoodProfileScreenState extends State<FoodProfileScreen> {
                         builder: (context) => const PaymentMethodPage()));
                 break;
               case 2:
-                // Handle My Address
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const AddressScreen()));
                 break;
               case 3:
                 // Handle My Promocodes

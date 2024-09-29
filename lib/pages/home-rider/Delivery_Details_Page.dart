@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
 class DeliveryDetailsPage extends StatelessWidget {
+  const DeliveryDetailsPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Dalivery'),
+        title: const Text('Dalivery'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -22,12 +24,12 @@ class DeliveryDetailsPage extends StatelessWidget {
             color: Colors.white,
             child: Column(
               children: [
-                ListTile(
+                const ListTile(
                   title: Text('Chicken Bhuna → Hollie jollile'),
                   subtitle: Text('\$30'),
                   trailing: Icon(Icons.arrow_forward),
                 ),
-                Divider(),
+                const Divider(),
                 _buildStep('ลูกค้าคิดเงิน', Icons.attach_money),
                 _buildStep('ดำเนินการ', Icons.delivery_dining),
                 _buildStep('ถ่ายรูปใบเสร็จ/สินค้าก่อนส่ง', Icons.camera_alt),
@@ -35,12 +37,12 @@ class DeliveryDetailsPage extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: ElevatedButton(
-                    child: Text('ยืนยัน'),
                     onPressed: () {},
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange,
-                      minimumSize: Size(double.infinity, 50),
+                      minimumSize: const Size(double.infinity, 50),
                     ),
+                    child: const Text('ยืนยัน'),
                   ),
                 ),
               ],
@@ -55,7 +57,7 @@ class DeliveryDetailsPage extends StatelessWidget {
     return ListTile(
       leading: Icon(icon, color: Colors.orange),
       title: Text(title),
-      trailing: Icon(Icons.arrow_forward_ios, size: 16),
+      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
     );
   }
 }
