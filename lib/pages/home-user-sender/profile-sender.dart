@@ -1,4 +1,5 @@
 import 'package:delivery_app/pages/home-user-sender/home-sender.dart';
+import 'package:delivery_app/pages/home-user-sender/list-menu.dart';
 import 'package:delivery_app/pages/list-on-profile-users/edit_profile.dart';
 import 'package:delivery_app/pages/list-on-profile-users/histrory.dart';
 import 'package:delivery_app/pages/list-on-profile-users/my-addr.dart';
@@ -9,15 +10,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class FoodProfileScreen extends StatefulWidget {
-  const FoodProfileScreen({super.key});
+class SendProfileScreen extends StatefulWidget {
+  const SendProfileScreen({super.key});
 
   @override
   // ignore: library_private_types_in_public_api
-  _FoodProfileScreenState createState() => _FoodProfileScreenState();
+  _SendProfileScreenState createState() => _SendProfileScreenState();
 }
 
-class _FoodProfileScreenState extends State<FoodProfileScreen> {
+class _SendProfileScreenState extends State<SendProfileScreen> {
   int _selectedIndex = 1; // Set to 1 for Profile tab
   String userType = 'user';
 
@@ -96,12 +97,9 @@ class _FoodProfileScreenState extends State<FoodProfileScreen> {
   Widget _buildProfileOptions() {
     return Column(
       children: [
-        _buildOptionTile(Icons.history, 'Order History', 0),
-        _buildOptionTile(Icons.payment, 'Payment Method', 1),
-        _buildOptionTile(Icons.location_on, 'My Address', 2),
-        _buildOptionTile(Icons.card_giftcard, 'My Promocodes', 3),
-        _buildOptionTile(Icons.favorite, 'My Favorite', 4),
-        _buildOptionTile(Icons.exit_to_app, 'Sign out', 5),
+        _buildOptionTile(Icons.payment, 'Payment Method', 0),
+        _buildOptionTile(Icons.location_on, 'My Address', 1),
+        _buildOptionTile(Icons.exit_to_app, 'Sign out', 2),
       ],
     );
   }
@@ -122,34 +120,10 @@ class _FoodProfileScreenState extends State<FoodProfileScreen> {
             });
             switch (_selectedIndex) {
               case 0:
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => OrderHistoryPage()));
                 break;
               case 1:
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const PaymentMethodPage()));
                 break;
               case 2:
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const AddressScreen()));
-                break;
-              case 3:
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) =>
-                            const HomesenderPage().animate().moveX()));
-                break;
-              case 4:
-                // Handle My Favorite
-                break;
-              case 5:
                 Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -187,10 +161,10 @@ class _FoodProfileScreenState extends State<FoodProfileScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: <Widget>[
               _buildNavItem(Icons.home, '', 0),
-              _buildNavItem(Icons.person, '●', 1),
+              _buildNavItem(Icons.dehaze, '', 1),
               const SizedBox(width: 60),
-              _buildNavItem(Icons.shopping_cart, '', 2),
-              _buildNavItem(Icons.favorite, '', 3),
+              _buildNavItem(Icons.apps, '', 2),
+              _buildNavItem(Icons.person, '●', 3),
             ],
           ),
         ),
@@ -210,7 +184,7 @@ class _FoodProfileScreenState extends State<FoodProfileScreen> {
             Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => const FoodHomeScreen()
+                    builder: (context) => const HomesenderPage()
                         .animate()
                         .slideX(begin: -1, end: 0, curve: Curves.ease)));
             break;
@@ -218,10 +192,16 @@ class _FoodProfileScreenState extends State<FoodProfileScreen> {
             // Do nothing as it's the current screen
             break;
           case 2:
-            // Handle Cart
-            break;
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const MenusenderPage()));
+          break;
           case 3:
-            // Handle Favorites
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const SendProfileScreen()));
             break;
         }
       },
