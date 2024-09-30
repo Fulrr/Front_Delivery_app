@@ -1,21 +1,21 @@
-// ignore_for_file: file_names
+// ignore_for_file: file_names, camel_case_types
 
+import 'package:delivery_app/pages/home-user-sender/add-menu.dart';
 import 'package:delivery_app/pages/home-user-sender/home-sender.dart';
 import 'package:delivery_app/pages/home-user-sender/list-add-menu/Lunch.dart';
-import 'package:delivery_app/pages/home-user-sender/list-add-menu/all-page.dart';
 import 'package:delivery_app/pages/home-user-sender/profile-sender.dart';
 import 'package:flutter/material.dart';
 
-class ListOrdersPage extends StatefulWidget {
-  const ListOrdersPage({super.key});
+class allpage extends StatefulWidget {
+  const allpage({super.key});
 
   @override
-  State<ListOrdersPage> createState() => _ListOrdersPageState();
+  State<allpage> createState() => _allpageState();
 }
 
-class _ListOrdersPageState extends State<ListOrdersPage> {
+class _allpageState extends State<allpage> {
   int _selectedIndex = 0;
-  int _selectedTabIndex = 1;
+  int _selectedTabIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +54,6 @@ class _ListOrdersPageState extends State<ListOrdersPage> {
         children: [
           _buildTabBar(),
           const SizedBox(width: 60),
-          _buildSearchCard(),
           Expanded(
             child: ListView(
               children: const [
@@ -64,7 +63,6 @@ class _ListOrdersPageState extends State<ListOrdersPage> {
               ],
             ),
           ),
-          _buildBottomButtons(),
         ],
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
@@ -95,11 +93,11 @@ class _ListOrdersPageState extends State<ListOrdersPage> {
           _selectedTabIndex = index;
         });
         switch (_selectedTabIndex) {
-          case 0:
+          case 1:
             Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => const allpage()));
+                    builder: (context) => const ListOrdersPage()));
           break;
           case 2:
             Navigator.push(
@@ -126,66 +124,6 @@ class _ListOrdersPageState extends State<ListOrdersPage> {
             ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSearchCard() {
-    return Card(
-      margin: const EdgeInsets.all(16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Row(
-          children: [
-            const SizedBox(width: 8),
-            const Expanded(
-              child: Text('ที่อยู่'),
-              ),
-            Text('xx/xx', style: TextStyle(color: Colors.grey[400])),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomButtons() {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: TextField(
-            decoration: InputDecoration(
-              hintText: 'IMG:xxxxxx',
-              suffixIcon: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                child: const Text('แนบรูป', style: TextStyle(color: Colors.white)),
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              minimumSize: const Size(double.infinity, 50),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text('จัดส่งสินค้า', style: TextStyle(fontSize: 18, color: Colors.white)),
-          ),
-        ),const SizedBox(width: 50,)
-      ],
     );
   }
 

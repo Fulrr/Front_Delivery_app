@@ -1,21 +1,22 @@
 // ignore_for_file: file_names
 
+import 'package:delivery_app/pages/home-user-sender/add-menu.dart';
 import 'package:delivery_app/pages/home-user-sender/home-sender.dart';
-import 'package:delivery_app/pages/home-user-sender/list-add-menu/Lunch.dart';
+import 'package:delivery_app/pages/home-user-sender/list-add-menu/Lunch-follow.dart';
 import 'package:delivery_app/pages/home-user-sender/list-add-menu/all-page.dart';
 import 'package:delivery_app/pages/home-user-sender/profile-sender.dart';
 import 'package:flutter/material.dart';
 
-class ListOrdersPage extends StatefulWidget {
-  const ListOrdersPage({super.key});
+class LunchPage extends StatefulWidget {
+  const LunchPage({super.key});
 
   @override
-  State<ListOrdersPage> createState() => _ListOrdersPageState();
+  State<LunchPage> createState() => _LunchPageState();
 }
 
-class _ListOrdersPageState extends State<ListOrdersPage> {
+class _LunchPageState extends State<LunchPage> {
   int _selectedIndex = 0;
-  int _selectedTabIndex = 1;
+  int _selectedTabIndex = 2;
 
   @override
   Widget build(BuildContext context) {
@@ -53,18 +54,15 @@ class _ListOrdersPageState extends State<ListOrdersPage> {
       body: Column(
         children: [
           _buildTabBar(),
-          const SizedBox(width: 60),
-          _buildSearchCard(),
           Expanded(
             child: ListView(
               children: const [
-                OrderItem(name: 'Justin', dish: 'Chicken Bhuna', id: '15253', price: 30),
-                OrderItem(name: 'Justin', dish: 'Vegetarian Poutine', id: '21200', price: 35),
-                OrderItem(name: 'Justin', dish: 'Turkey Bacon Strips', id: '53241', price: 45),
+                OrderItem(name: 'Justin', dish: 'ListOders', id: '15253', price: 130),
+                OrderItem(name: 'Mailia', dish: 'ListOders', id: '21200', price: 325),
+                OrderItem(name: 'Korn', dish: 'ListOders', id: '53241', price: 245),
               ],
             ),
           ),
-          _buildBottomButtons(),
         ],
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
@@ -80,7 +78,7 @@ class _ListOrdersPageState extends State<ListOrdersPage> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildTabItem('All', 0),
-          _buildTabItem('List Orders', 1),
+          _buildTabItem('List Oders', 1),
           _buildTabItem('Lunch', 2),
         ],
       ),
@@ -101,11 +99,11 @@ class _ListOrdersPageState extends State<ListOrdersPage> {
                 MaterialPageRoute(
                     builder: (context) => const allpage()));
           break;
-          case 2:
+          case 1:
             Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => const LunchPage()));
+                    builder: (context) => const ListOrdersPage()));
           break;
         }
       },
@@ -126,66 +124,6 @@ class _ListOrdersPageState extends State<ListOrdersPage> {
             ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSearchCard() {
-    return Card(
-      margin: const EdgeInsets.all(16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Row(
-          children: [
-            const SizedBox(width: 8),
-            const Expanded(
-              child: Text('ที่อยู่'),
-              ),
-            Text('xx/xx', style: TextStyle(color: Colors.grey[400])),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomButtons() {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: TextField(
-            decoration: InputDecoration(
-              hintText: 'IMG:xxxxxx',
-              suffixIcon: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                child: const Text('แนบรูป', style: TextStyle(color: Colors.white)),
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              minimumSize: const Size(double.infinity, 50),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text('จัดส่งสินค้า', style: TextStyle(fontSize: 18, color: Colors.white)),
-          ),
-        ),const SizedBox(width: 50,)
-      ],
     );
   }
 
@@ -295,15 +233,15 @@ class OrderItem extends StatelessWidget {
   final String name;
   final String dish;
   final String id;
-  final double price;
+  final int price;
 
   const OrderItem({
-    super.key,
+    Key? key,
     required this.name,
     required this.dish,
     required this.id,
     required this.price,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -327,6 +265,23 @@ class OrderItem extends StatelessWidget {
                 Text('\$$price', style: const TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const lunchfollowpage(),
+                        ),
+                      );
+                    },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            child: const Text('รายละเอียด', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
