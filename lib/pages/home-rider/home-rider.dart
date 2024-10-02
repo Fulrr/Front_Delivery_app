@@ -53,7 +53,7 @@ class _HomeRiderPageState extends State<HomeRiderPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('รายการส่งสินค้า'),
+        title: const Text('Dalivery'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -64,7 +64,7 @@ class _HomeRiderPageState extends State<HomeRiderPage> {
           const Padding(
             padding: EdgeInsets.all(16.0),
             child: Text(
-              'คำสั่งที่พร้อมให้รับ',
+              'Menus',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
