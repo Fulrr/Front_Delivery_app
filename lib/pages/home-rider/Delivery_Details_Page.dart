@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class DeliveryDetailsPage extends StatelessWidget {
-  const DeliveryDetailsPage({super.key});
+  const DeliveryDetailsPage({super.key, required order});
 
   @override
   Widget build(BuildContext context) {

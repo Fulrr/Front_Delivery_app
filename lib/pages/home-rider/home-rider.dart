@@ -1,26 +1,59 @@
-// ignore_for_file: file_names
-
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:delivery_app/pages/list-on-profile-users/edit_profile.dart';
 import 'package:delivery_app/pages/home-rider/Delivery_Details_Page.dart';
-import 'package:delivery_app/pages/login.dart'; // Import LoginScreen
-import 'package:flutter/material.dart';
+import 'package:delivery_app/pages/login.dart';
 
 class HomeRiderPage extends StatefulWidget {
-  const HomeRiderPage({super.key});
+  const HomeRiderPage({Key? key}) : super(key: key);
 
   @override
-  // ignore: library_private_types_in_public_api
   _HomeRiderPageState createState() => _HomeRiderPageState();
 }
 
 class _HomeRiderPageState extends State<HomeRiderPage> {
-  int _selectedIndex = 1; // Default to home icon
+  int _selectedIndex = 1;
+  List<dynamic> orders = [];
+  bool isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchAvailableOrders();
+  }
+
+  Future<void> fetchAvailableOrders() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final response = await http.get(
+          Uri.parse('http://192.168.0.254:8081/api/orders/rider/available'));
+      if (response.statusCode == 200) {
+        setState(() {
+          orders = json.decode(response.body);
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to load orders');
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('เกิดข้อผิดพลาดในการโหลดข้อมูล: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Delivery'),
+        title: const Text('รายการส่งสินค้า'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -31,40 +64,55 @@ class _HomeRiderPageState extends State<HomeRiderPage> {
           const Padding(
             padding: EdgeInsets.all(16.0),
             child: Text(
-              'Menus',
+              'คำสั่งที่พร้อมให้รับ',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              itemCount: 5,
-              itemBuilder: (context, index) {
-                return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: ListTile(
-                    leading: Container(
-                      width: 60,
-                      height: 60,
-                      color: Colors.grey[300],
-                    ),
-                    title: const Text('Chicken Bhuna'),
-                    subtitle: const Text('\$30'),
-                    trailing: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const DeliveryDetailsPage()),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange),
-                      child: const Text('รับงาน'),
-                    ),
-                  ),
-                );
-              },
-            ),
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : orders.isEmpty
+                    ? const Center(
+                        child: Text('ไม่มีคำสั่งที่พร้อมให้รับในขณะนี้'))
+                    : ListView.builder(
+                        itemCount: orders.length,
+                        itemBuilder: (context, index) {
+                          final order = orders[index];
+                          return Card(
+                            margin: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                            child: ListTile(
+                              leading: Container(
+                                width: 60,
+                                height: 60,
+                                color: Colors.grey[300],
+                                child: order['imageUrls'].isNotEmpty
+                                    ? Image.network(order['imageUrls'][0],
+                                        fit: BoxFit.cover)
+                                    : const Icon(Icons.image_not_supported),
+                              ),
+                              title: Text(order['items'][0]['name']),
+                              subtitle: Text(
+                                  '฿${order['totalAmount'].toStringAsFixed(2)}'),
+                              trailing: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          DeliveryDetailsPage(order: order),
+                                    ),
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange,
+                                ),
+                                child: const Text('รับงาน'),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
           ),
         ],
       ),
