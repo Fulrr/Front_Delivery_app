@@ -1,10 +1,37 @@
+import 'dart:developer';
+
 import 'package:delivery_app/pages/home-user-sender/add-menu.dart';
 import 'package:delivery_app/pages/home-user-sender/list-menu.dart';
 import 'package:delivery_app/pages/home-user-sender/profile-sender.dart';
-import 'package:delivery_app/pages/home_user/profile.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+class Order {
+  final String id;
+  final String customerName;
+  final String itemName;
+  final double price;
+  final String phone;
+
+  Order(
+      {required this.id,
+      required this.customerName,
+      required this.phone,
+      required this.itemName,
+      required this.price});
+
+  factory Order.fromJson(Map<String, dynamic> json) {
+    return Order(
+      id: json['_id'],
+      customerName: json['recipient']['name'],
+      phone: json['recipient']['phone'],
+      itemName: json['items'][0]['name'],
+      price: json['totalAmount'].toDouble(),
+    );
+  }
+}
 
 class HomesenderPage extends StatefulWidget {
   const HomesenderPage({super.key});
@@ -15,6 +42,52 @@ class HomesenderPage extends StatefulWidget {
 
 class _HomesenderPageState extends State<HomesenderPage> {
   int _selectedIndex = 0;
+  List<Order> orders = [];
+  List<Order> filteredOrders = [];
+  bool isLoading = false;
+  TextEditingController searchController = TextEditingController();
+
+  final String url = 'http://10.210.60.215:8081/api/orders/';
+
+  @override
+  void initState() {
+    super.initState();
+    fetchOrders();
+  }
+
+  Future<void> fetchOrders() async {
+    setState(() {
+      isLoading = true;
+    });
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonData = json.decode(response.body);
+        setState(() {
+          orders = jsonData.map((data) => Order.fromJson(data)).toList();
+          filteredOrders = orders;
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to load orders');
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      log('Error fetching orders: $e');
+    }
+  }
+
+  void searchOrders(String query) {
+  setState(() {
+    filteredOrders = orders.where((order) =>
+      order.customerName.toLowerCase().contains(query.toLowerCase()) ||
+      order.phone.toLowerCase().contains(query.toLowerCase())
+    ).toList();
+  });
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -61,40 +134,154 @@ class _HomesenderPageState extends State<HomesenderPage> {
           ),
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: _buildSearchField(),
+            child: TextField(
+              controller: searchController,
+              decoration: InputDecoration(
+                hintText: 'Search by name or ID',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ),
+              onChanged: searchOrders,
+              style: GoogleFonts.itim(),
+            ),
           ),
           Center(
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                searchOrders(searchController.text);
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: Colors.black,
-                // side: const BorderSide(color: Colors.black),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
               ),
-              child: Text('ค้นหาผู้รับสินค้า',style: GoogleFonts.itim(fontSize: 14)),
+              child: Text('ค้นหาผู้รับสินค้า', style: GoogleFonts.itim(fontSize: 14)),
             ),
+          ),
+          const Center(
+            child: FractionallySizedBox(
+              widthFactor: 0.9, // 80% of the available width
+              child: Divider(color: Colors.black),
+            ),
+          ),
+
+          Expanded(
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    itemCount: filteredOrders.length,
+                    itemBuilder: (context, index) {
+                      final order = filteredOrders[index];
+                      return Container(
+                        margin: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.3),
+                              spreadRadius: 1,
+                              blurRadius: 3,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    width: 60,
+                                    height: 60,
+                                    color: Colors.grey[300],
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          order.customerName,
+                                          style: GoogleFonts.itim(
+                                            color: Colors.orange,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          order.itemName,
+                                          style: GoogleFonts.itim(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                            'ID: ${order.phone}',style: GoogleFonts.itim()),
+                                        Text(
+                                          '\$${order.price.toStringAsFixed(2)}',
+                                          style: GoogleFonts.itim(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                ElevatedButton(
+                                  onPressed: () {
+                                    // Implement accept order functionality
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.orange,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                  ),
+                                  child: Text('เพิ่ม',
+                                      style: GoogleFonts.itim(color: Colors.white)),
+                                ),
+                                const SizedBox(width: 8),
+                                TextButton(
+                                  onPressed: () {
+                                    // Implement cancel order functionality
+                                  },
+                                  style: TextButton.styleFrom(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                      side: const BorderSide(color: Colors.red),
+                                    ),
+                                  ),
+                                  child: Text('Cancel',
+                                      style: GoogleFonts.itim(color: Colors.red)),
+                                ),
+                                const SizedBox(width: 12),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
       floatingActionButton: _buildFloatingActionButton(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-    );
-  }
-
-  Widget _buildSearchField() {
-    return TextField(
-      decoration: InputDecoration(
-        hintText: 'Search',
-        prefixIcon: const Icon(Icons.search),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(30),
-        ),
-      ),
-      style: GoogleFonts.fredoka(), // Apply font style here
     );
   }
 
@@ -144,19 +331,19 @@ class _HomesenderPageState extends State<HomesenderPage> {
                 context,
                 MaterialPageRoute(
                     builder: (context) => const ListOrdersPage()));
-          break;
+            break;
           case 2:
             Navigator.push(
                 context,
                 MaterialPageRoute(
                     builder: (context) => const MenusenderPage()));
-          break;
+            break;
           case 3:
             Navigator.push(
                 context,
                 MaterialPageRoute(
                     builder: (context) => const SendProfileScreen()));
-          break;
+            break;
         }
       },
       child: Column(
