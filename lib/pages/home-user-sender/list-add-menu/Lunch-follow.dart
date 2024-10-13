@@ -14,7 +14,11 @@ class _lunchfollowpageState extends State<lunchfollowpage> {
   late GoogleMapController mapController;
   bool isExpanded = false;
 
-  final LatLng _center = const LatLng(15.7461, 100.3742);
+  // กำหนดพิกัดเริ่มต้นของแผนที่
+  CameraPosition initPosition = const CameraPosition(
+    target: LatLng(16.246671218679253, 103.25207957788868),
+    zoom: 17,
+  );
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
@@ -40,10 +44,7 @@ class _lunchfollowpageState extends State<lunchfollowpage> {
           Expanded(
             child: GoogleMap(
               onMapCreated: _onMapCreated,
-              initialCameraPosition: CameraPosition(
-                target: _center,
-                zoom: 11.0,
-              ),
+              initialCameraPosition: initPosition, // ใช้ initPosition ที่กำหนดไว้
             ),
           ),
           _buildOrderDetails(),
@@ -82,7 +83,7 @@ class _lunchfollowpageState extends State<lunchfollowpage> {
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                       ),
                       Text(
-                        'Orderd At 06 Sept, 10:00pm',
+                        'Ordered At 06 Sept, 10:00pm',
                         style: TextStyle(color: Colors.grey),
                       ),
                     ],
@@ -98,7 +99,7 @@ class _lunchfollowpageState extends State<lunchfollowpage> {
           ] else ...[
             const SizedBox(height: 16),
             const Text('2x Burger'),
-            const Text('4x Sanwitch'),
+            const Text('4x Sandwich'),
           ],
         ],
       ),
@@ -121,6 +122,7 @@ class _lunchfollowpageState extends State<lunchfollowpage> {
         const SizedBox(height: 16),
         ElevatedButton(
           onPressed: () {
+            // เพิ่มฟังก์ชันเมื่อกดปุ่ม
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.orange,

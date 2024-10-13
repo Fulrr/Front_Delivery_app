@@ -1,3 +1,4 @@
+import 'package:delivery_app/pages/list-on-profile-users/add-card.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -29,11 +30,29 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
               children: [
                 Text(
                   'Credit Cards',
-                  style: GoogleFonts.fredoka(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.fredoka(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                Text(
-                  'Add +',
-                  style: GoogleFonts.fredoka(color: Colors.red, fontWeight: FontWeight.bold),
+                InkWell(
+                  onTap: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent, // พื้นหลังโปร่งใส
+                      builder: (context) {
+                        return const AddCardView(); // แสดง AddCardView
+                      },
+                    );
+                  },
+                  child: Text(
+                    'Add +',
+                    style: GoogleFonts.fredoka(
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -78,7 +97,8 @@ class _PaymentMethodPageState extends State<PaymentMethodPage> {
                 children: [
                   Text(
                     '9897 6565 3232 3232',
-                    style: GoogleFonts.fredoka(color: Colors.white, fontSize: 18),
+                    style:
+                        GoogleFonts.fredoka(color: Colors.white, fontSize: 18),
                   ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

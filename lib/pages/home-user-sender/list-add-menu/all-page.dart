@@ -3,6 +3,7 @@
 import 'package:delivery_app/pages/home-user-sender/add-menu.dart';
 import 'package:delivery_app/pages/home-user-sender/home-sender.dart';
 import 'package:delivery_app/pages/home-user-sender/list-add-menu/Lunch.dart';
+import 'package:delivery_app/pages/home-user-sender/list-add-menu/list-order.dart';
 import 'package:delivery_app/pages/home-user-sender/profile-sender.dart';
 import 'package:flutter/material.dart';
 
@@ -55,12 +56,24 @@ class _allpageState extends State<allpage> {
           _buildTabBar(),
           const SizedBox(width: 60),
           Expanded(
-            child: ListView(
-              children: const [
-                OrderItem(name: 'Justin', dish: 'Chicken Bhuna', id: '15253', price: 30),
-                OrderItem(name: 'Justin', dish: 'Vegetarian Poutine', id: '21200', price: 35),
-                OrderItem(name: 'Justin', dish: 'Turkey Bacon Strips', id: '53241', price: 45),
-              ],
+            child: GestureDetector(
+              onTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent, // พื้นหลังโปร่งใส
+                  builder: (context) {
+                    return const listorders(); // แสดง listorders
+                  },
+                );
+              },
+              child: ListView(
+                children: const [
+                  OrderItem(list: 'L1', name: 'Jusin', id: '15253', totalAmounts: 300),
+                  OrderItem(list: 'L2', name: 'Tom', id: '21200', totalAmounts: 350),
+                  OrderItem(list: 'L3', name: 'Dolly', id: '53241', totalAmounts: 450),
+                ],
+              ),
             ),
           ),
         ],
@@ -95,16 +108,16 @@ class _allpageState extends State<allpage> {
         switch (_selectedTabIndex) {
           case 1:
             Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const ListOrdersPage()));
-          break;
+              context,
+              MaterialPageRoute(builder: (context) => const ListOrdersPage()),
+            );
+            break;
           case 2:
             Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const LunchPage()));
-          break;
+              context,
+              MaterialPageRoute(builder: (context) => const LunchPage()),
+            );
+            break;
         }
       },
       child: Column(
@@ -170,16 +183,16 @@ class _allpageState extends State<allpage> {
         switch (_selectedIndex) {
           case 0:
             Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const HomesenderPage()));
-          break;
+              context,
+              MaterialPageRoute(builder: (context) => const HomesenderPage()),
+            );
+            break;
           case 3:
             Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const SendProfileScreen()));
-          break;
+              context,
+              MaterialPageRoute(builder: (context) => const SendProfileScreen()),
+            );
+            break;
         }
       },
       child: Column(
@@ -230,17 +243,17 @@ class _allpageState extends State<allpage> {
 }
 
 class OrderItem extends StatelessWidget {
+  final String list;
   final String name;
-  final String dish;
   final String id;
-  final double price;
+  final double totalAmounts;
 
   const OrderItem({
     super.key,
+    required this.list,
     required this.name,
-    required this.dish,
     required this.id,
-    required this.price,
+    required this.totalAmounts,
   });
 
   @override
@@ -259,10 +272,10 @@ class OrderItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: const TextStyle(color: Colors.orange)),
-                Text(dish, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(list, style: const TextStyle(color: Colors.orange)),
+                Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
                 Text('ID: $id', style: TextStyle(color: Colors.grey[600])),
-                Text('\$$price', style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text('\$$totalAmounts', style: const TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
           ),

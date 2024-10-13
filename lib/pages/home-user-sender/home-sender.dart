@@ -1,6 +1,7 @@
 import 'dart:developer';
-
 import 'package:delivery_app/pages/home-user-sender/add-menu.dart';
+import 'package:delivery_app/pages/home-user-sender/list-add-menu/CartPage.dart';
+import 'package:delivery_app/pages/home-user-sender/list-add-menu/all-page.dart';
 import 'package:delivery_app/pages/home-user-sender/list-menu.dart';
 import 'package:delivery_app/pages/home-user-sender/profile-sender.dart';
 import 'package:flutter/material.dart';
@@ -14,13 +15,16 @@ class Order {
   final String itemName;
   final double price;
   final String phone;
+  bool isAddedToCart;
 
-  Order(
-      {required this.id,
-      required this.customerName,
-      required this.phone,
-      required this.itemName,
-      required this.price});
+  Order({
+    required this.id,
+    required this.customerName,
+    required this.phone,
+    required this.itemName,
+    required this.price,
+    this.isAddedToCart = false,
+  });
 
   factory Order.fromJson(Map<String, dynamic> json) {
     return Order(
@@ -44,6 +48,7 @@ class _HomesenderPageState extends State<HomesenderPage> {
   int _selectedIndex = 0;
   List<Order> orders = [];
   List<Order> filteredOrders = [];
+  List<Order> cartOrders = [];
   bool isLoading = false;
   TextEditingController searchController = TextEditingController();
 
@@ -80,14 +85,26 @@ class _HomesenderPageState extends State<HomesenderPage> {
   }
 
   void searchOrders(String query) {
-  setState(() {
-    filteredOrders = orders.where((order) =>
-      order.customerName.toLowerCase().contains(query.toLowerCase()) ||
-      order.phone.toLowerCase().contains(query.toLowerCase())
-    ).toList();
-  });
-}
+    setState(() {
+      filteredOrders = orders.where((order) =>
+          order.customerName.toLowerCase().contains(query.toLowerCase()) ||
+          order.phone.toLowerCase().contains(query.toLowerCase())).toList();
+    });
+  }
 
+  void addToCart(Order order) {
+    setState(() {
+      order.isAddedToCart = true;
+      cartOrders.add(order);
+    });
+  }
+
+  void removeFromCart(Order order) {
+    setState(() {
+      order.isAddedToCart = false; // เปลี่ยนสถานะกลับไปที่ไม่เพิ่มในตะกร้า
+      cartOrders.remove(order); // ลบคำสั่งออกจากตะกร้า
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -126,10 +143,34 @@ class _HomesenderPageState extends State<HomesenderPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              'Orders',
-              style: GoogleFonts.itim(fontSize: 22, fontWeight: FontWeight.bold),
+            padding: const EdgeInsets.only(left: 16, right: 24),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Orders',
+                  style: GoogleFonts.itim(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+                InkWell(
+                  onTap: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) {
+                        return CartPage(
+                          cartOrders: cartOrders,
+                          onRemove: removeFromCart, // ส่งฟังก์ชันนี้ไปยัง CartPage
+                        );
+                      },
+                    );
+                  },
+                  child: Text(
+                    'Cart',
+                    style: GoogleFonts.itim(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
             ),
           ),
           Padding(
@@ -164,11 +205,10 @@ class _HomesenderPageState extends State<HomesenderPage> {
           ),
           const Center(
             child: FractionallySizedBox(
-              widthFactor: 0.9, // 80% of the available width
+              widthFactor: 0.9,
               child: Divider(color: Colors.black),
             ),
           ),
-
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -176,104 +216,104 @@ class _HomesenderPageState extends State<HomesenderPage> {
                     itemCount: filteredOrders.length,
                     itemBuilder: (context, index) {
                       final order = filteredOrders[index];
-                      return Container(
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.3),
-                              spreadRadius: 1,
-                              blurRadius: 3,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Row(
+                      return order.isAddedToCart
+                          ? Container() // ซ่อนสินค้าเมื่อเพิ่มไปยังตะกร้าแล้ว
+                          : Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.3),
+                                    spreadRadius: 1,
+                                    blurRadius: 3,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Container(
-                                    width: 60,
-                                    height: 60,
-                                    color: Colors.grey[300],
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                  Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          order.customerName,
-                                          style: GoogleFonts.itim(
-                                            color: Colors.orange,
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                        Container(
+                                          width: 60,
+                                          height: 60,
+                                          color: Colors.grey[300],
                                         ),
-                                        Text(
-                                          order.itemName,
-                                          style: GoogleFonts.itim(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        Text(
-                                            'ID: ${order.phone}',style: GoogleFonts.itim()),
-                                        Text(
-                                          '\$${order.price.toStringAsFixed(2)}',
-                                          style: GoogleFonts.itim(
-                                            fontWeight: FontWeight.bold,
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                order.customerName,
+                                                style: GoogleFonts.itim(
+                                                  color: Colors.orange,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              Text(
+                                                order.itemName,
+                                                style: GoogleFonts.itim(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              Text(
+                                                'ID: ${order.phone}',
+                                                style: GoogleFonts.itim(),
+                                              ),
+                                              Text(
+                                                '\$${order.price.toStringAsFixed(2)}',
+                                                style: GoogleFonts.itim(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          addToCart(order);
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.orange,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(20),
+                                          ),
+                                        ),
+                                        child: Text('เพิ่ม', style: GoogleFonts.itim(color: Colors.white)),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      TextButton(
+                                        onPressed: () {
+                                          // Implement cancel order functionality
+                                        },
+                                        style: TextButton.styleFrom(
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(20),
+                                            side: const BorderSide(color: Colors.red),
+                                          ),
+                                        ),
+                                        child: Text('Cancel', style: GoogleFonts.itim(color: Colors.red)),
+                                      ),
+                                      const SizedBox(width: 12),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
                                 ],
                               ),
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                ElevatedButton(
-                                  onPressed: () {
-                                    // Implement accept order functionality
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.orange,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                  ),
-                                  child: Text('เพิ่ม',
-                                      style: GoogleFonts.itim(color: Colors.white)),
-                                ),
-                                const SizedBox(width: 8),
-                                TextButton(
-                                  onPressed: () {
-                                    // Implement cancel order functionality
-                                  },
-                                  style: TextButton.styleFrom(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(20),
-                                      side: const BorderSide(color: Colors.red),
-                                    ),
-                                  ),
-                                  child: Text('Cancel',
-                                      style: GoogleFonts.itim(color: Colors.red)),
-                                ),
-                                const SizedBox(width: 12),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                          ],
-                        ),
-                      );
+                            );
                     },
                   ),
           ),
@@ -327,22 +367,13 @@ class _HomesenderPageState extends State<HomesenderPage> {
         });
         switch (_selectedIndex) {
           case 1:
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const ListOrdersPage()));
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const allpage()));
             break;
           case 2:
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const MenusenderPage()));
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const MenusenderPage()));
             break;
           case 3:
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const SendProfileScreen()));
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const SendProfileScreen()));
             break;
         }
       },

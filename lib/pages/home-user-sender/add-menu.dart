@@ -5,6 +5,8 @@ import 'package:delivery_app/pages/home-user-sender/list-add-menu/Lunch.dart';
 import 'package:delivery_app/pages/home-user-sender/list-add-menu/all-page.dart';
 import 'package:delivery_app/pages/home-user-sender/profile-sender.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class ListOrdersPage extends StatefulWidget {
   const ListOrdersPage({super.key});
@@ -16,6 +18,18 @@ class ListOrdersPage extends StatefulWidget {
 class _ListOrdersPageState extends State<ListOrdersPage> {
   int _selectedIndex = 0;
   int _selectedTabIndex = 1;
+  File? _image;
+
+  Future<void> _pickImage(ImageSource source) async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: source);
+
+    if (pickedFile != null) {
+      setState(() {
+        _image = File(pickedFile.path);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -137,10 +151,19 @@ class _ListOrdersPageState extends State<ListOrdersPage> {
         child: Row(
           children: [
             const SizedBox(width: 8),
-            const Expanded(
-              child: Text('ที่อยู่'),
+            Expanded(
+              child: Column(
+                crossAxisAlignment:CrossAxisAlignment.start,
+                children: [
+                  const Text('ที่อยู่'),Row(
+                    children: [
+                      // const SizedBox(height: 20,),
+                      Text('xx/xx', style: TextStyle(color: Colors.grey[400])),
+                    ],
+                  ),
+                ],
               ),
-            Text('xx/xx', style: TextStyle(color: Colors.grey[400])),
+              ),
           ],
         ),
       ),
@@ -155,15 +178,18 @@ class _ListOrdersPageState extends State<ListOrdersPage> {
           child: TextField(
             decoration: InputDecoration(
               hintText: 'IMG:xxxxxx',
-              suffixIcon: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+              suffixIcon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.camera_alt),
+                    onPressed: () => _pickImage(ImageSource.camera), // ถ่ายรูป
                   ),
-                ),
-                child: const Text('แนบรูป', style: TextStyle(color: Colors.white)),
+                  IconButton(
+                    icon: const Icon(Icons.photo),
+                    onPressed: () => _pickImage(ImageSource.gallery), // เลือกรูปจากแกลเลอรี
+                  ),
+                ],
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -171,6 +197,16 @@ class _ListOrdersPageState extends State<ListOrdersPage> {
             ),
           ),
         ),
+        if (_image != null)
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Image.file(
+              _image!,
+              height: 150,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.all(16),
           child: ElevatedButton(
@@ -184,7 +220,8 @@ class _ListOrdersPageState extends State<ListOrdersPage> {
             ),
             child: const Text('จัดส่งสินค้า', style: TextStyle(fontSize: 18, color: Colors.white)),
           ),
-        ),const SizedBox(width: 50,)
+        ),
+        const SizedBox(width: 50, height: 30),
       ],
     );
   }
