@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:delivery_app/pages/list-on-profile-users/edit_profile.dart';
 import 'package:delivery_app/pages/home-rider/Delivery_Details_Page.dart';
 import 'package:delivery_app/pages/login.dart';
+import 'package:delivery_app/config/config.dart';
 
 class HomeRiderPage extends StatefulWidget {
   const HomeRiderPage({Key? key}) : super(key: key);
@@ -29,8 +30,7 @@ class _HomeRiderPageState extends State<HomeRiderPage> {
     });
 
     try {
-      final response = await http.get(
-          Uri.parse('http://192.168.0.254:8081/api/orders/rider/available'));
+      final response = await http.get(Uri.parse(getAvailableOrders));
       if (response.statusCode == 200) {
         setState(() {
           orders = json.decode(response.body);
