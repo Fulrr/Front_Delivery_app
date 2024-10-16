@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:delivery_app/config/config.dart';
 
 class DeliveryDetailsPage extends StatelessWidget {
   final Map<String, dynamic> order;
@@ -154,12 +157,37 @@ class DeliveryDetailsPage extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () {
-          // TODO: Implement order acceptance logic
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('คุณได้รับงานนี้แล้ว')),
-          );
-          Navigator.pop(context);
+        onPressed: () async {
+          try {
+            final response = await http.post(
+              Uri.parse('${acceptOrder}/${order['_id']}/accept'),
+              headers: <String, String>{
+                'Content-Type': 'application/json; charset=UTF-8',
+              },
+              body: jsonEncode(<String, String>{
+                'riderId': 'your_rider_id_here', // ต้องใส่ riderId ใน body
+              }),
+            );
+
+            if (response.statusCode == 200) {
+              // API call successful
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('คุณได้รับงานนี้แล้ว')),
+              );
+              Navigator.pop(context);
+            } else {
+              // API call failed
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                    content: Text('เกิดข้อผิดพลาด: ${response.statusCode}')),
+              );
+            }
+          } catch (e) {
+            // Network or other error
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('เกิดข้อผิดพลาด: $e')),
+            );
+          }
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.orange,
