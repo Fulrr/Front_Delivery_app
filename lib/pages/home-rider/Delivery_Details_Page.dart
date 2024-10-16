@@ -11,6 +11,21 @@ class DeliveryDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ตรวจสอบว่า order ไม่เป็น null
+    if (order.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('รายละเอียดคำสั่งส่ง'),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
+        ),
+        body: Center(
+          child: const Text('ไม่พบข้อมูลคำสั่งส่ง'),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('รายละเอียดคำสั่งส่ง'),
@@ -114,9 +129,10 @@ class DeliveryDetailsPage extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(item['name']),
+                    Text(item['name'] ??
+                        'ไม่ระบุชื่อสินค้า'), // จัดการค่าที่เป็น null
                     Text(
-                        '${item['quantity']} x ฿${item['price'].toStringAsFixed(2)}'),
+                        '${item['quantity'] ?? 0} x ฿${(item['price'] ?? 0).toStringAsFixed(2)}'), // ป้องกันการเรียกใช้ toStringAsFixed บน null
                   ],
                 ),
               );
@@ -141,7 +157,7 @@ class DeliveryDetailsPage extends StatelessWidget {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             Text(
-              '฿${order['totalAmount'].toStringAsFixed(2)}',
+              '฿${(order['totalAmount'] ?? 0).toStringAsFixed(2)}', // ป้องกันการเรียกใช้ toStringAsFixed บน null
               style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
