@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:delivery_app/config/config.dart';
 
 class DeliveryDetailsPage extends StatelessWidget {
   final Map<String, dynamic> order;
@@ -8,6 +11,21 @@ class DeliveryDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ตรวจสอบว่า order ไม่เป็น null
+    if (order.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('รายละเอียดคำสั่งส่ง'),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
+        ),
+        body: Center(
+          child: const Text('ไม่พบข้อมูลคำสั่งส่ง'),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('รายละเอียดคำสั่งส่ง'),
@@ -111,9 +129,10 @@ class DeliveryDetailsPage extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(item['name']),
+                    Text(item['name'] ??
+                        'ไม่ระบุชื่อสินค้า'), // จัดการค่าที่เป็น null
                     Text(
-                        '${item['quantity']} x ฿${item['price'].toStringAsFixed(2)}'),
+                        '${item['quantity'] ?? 0} x ฿${(item['price'] ?? 0).toStringAsFixed(2)}'), // ป้องกันการเรียกใช้ toStringAsFixed บน null
                   ],
                 ),
               );
@@ -138,7 +157,7 @@ class DeliveryDetailsPage extends StatelessWidget {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             Text(
-              '฿${order['totalAmount'].toStringAsFixed(2)}',
+              '฿${(order['totalAmount'] ?? 0).toStringAsFixed(2)}', // ป้องกันการเรียกใช้ toStringAsFixed บน null
               style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -154,12 +173,37 @@ class DeliveryDetailsPage extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () {
-          // TODO: Implement order acceptance logic
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('คุณได้รับงานนี้แล้ว')),
-          );
-          Navigator.pop(context);
+        onPressed: () async {
+          try {
+            final response = await http.post(
+              Uri.parse('${acceptOrder}/${order['_id']}/accept'),
+              headers: <String, String>{
+                'Content-Type': 'application/json; charset=UTF-8',
+              },
+              body: jsonEncode(<String, String>{
+                'riderId': 'your_rider_id_here', // ต้องใส่ riderId ใน body
+              }),
+            );
+
+            if (response.statusCode == 200) {
+              // API call successful
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('คุณได้รับงานนี้แล้ว')),
+              );
+              Navigator.pop(context);
+            } else {
+              // API call failed
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                    content: Text('เกิดข้อผิดพลาด: ${response.statusCode}')),
+              );
+            }
+          } catch (e) {
+            // Network or other error
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('เกิดข้อผิดพลาด: $e')),
+            );
+          }
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.orange,
