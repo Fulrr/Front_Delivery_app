@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:delivery_app/pages/home-rider/home-rider.dart';
 import 'package:delivery_app/pages/home_user/home-re.dart';
+import 'package:delivery_app/pages/reg-rider.dart';
 import 'package:delivery_app/pages/register.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -202,22 +203,59 @@ class _LoginScreenState extends State<LoginScreen>
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text("Don't have an account? "),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => SignUpScreen()),
-                            );
-                          },
-                          child: const Text(
-                            "Sign up",
-                            style: TextStyle(
-                              color: Colors.red,
-                              decoration: TextDecoration.underline,
+                        Column(
+                          children: [
+                            Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    const Text("Don't have an UserAccount? "),
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) => SignUpScreen()),
+                                        );
+                                      },
+                                      child: const Text(
+                                        "Sign up",
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                          ),
+                            Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    const Text("Don't have an RiderAccount? "),
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) => SignUpRider()),
+                                        );
+                                      },
+                                      child: const Text(
+                                        "Sign up",
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ],
                     ),
