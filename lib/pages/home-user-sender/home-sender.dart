@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:delivery_app/models/order.dart'; 
+import 'package:delivery_app/models/order.dart';
 import 'package:delivery_app/pages/home-user-sender/list-add-menu/CartPage.dart';
 import 'package:delivery_app/pages/home-user-sender/list-add-menu/all-page.dart';
 import 'package:delivery_app/pages/home-user-sender/list-menu.dart';
@@ -22,7 +22,6 @@ class _HomesenderPageState extends State<HomesenderPage> {
   int _selectedIndex = 0;
   List<Order> orders = [];
   List<Order> filteredOrders = [];
-  List<Order> cartOrders = [];
   bool isLoading = false;
   TextEditingController searchController = TextEditingController();
 
@@ -102,7 +101,6 @@ class _HomesenderPageState extends State<HomesenderPage> {
   void addToCart(Order order) {
     setState(() {
       order.orders = 0; // เมื่อเพิ่มในตะกร้า เซ็ตค่าเป็น 0
-      cartOrders.add(order);
       updateOrder(order); // อัพเดตค่าลงในฐานข้อมูล
     });
   }
@@ -169,8 +167,7 @@ class _HomesenderPageState extends State<HomesenderPage> {
                       backgroundColor: Colors.transparent,
                       builder: (context) {
                         return CartPage(
-                          cartOrders:
-                              cartOrders, // ส่งรายการสินค้าในตะกร้าไปยัง CartPage
+                          cartOrders: orders, 
                         );
                       },
                     );
@@ -178,7 +175,9 @@ class _HomesenderPageState extends State<HomesenderPage> {
                   child: Text(
                     'Cart',
                     style: GoogleFonts.itim(
-                        fontSize: 16, fontWeight: FontWeight.bold),
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
