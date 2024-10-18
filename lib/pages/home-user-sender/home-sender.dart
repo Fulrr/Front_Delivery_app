@@ -1,41 +1,15 @@
+// ignore_for_file: file_names
+
 import 'dart:developer';
-import 'package:delivery_app/pages/home-user-sender/add-menu.dart';
-import 'package:delivery_app/pages/home-user-sender/list-add-menu/CartPage.dart';
-import 'package:delivery_app/pages/home-user-sender/list-add-menu/all-page.dart';
-import 'package:delivery_app/pages/home-user-sender/list-menu.dart';
-import 'package:delivery_app/pages/home-user-sender/profile-sender.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
-class Order {
-  final String id;
-  final String customerName;
-  final String itemName;
-  final double price;
-  final String phone;
-  bool isAddedToCart;
-
-  Order({
-    required this.id,
-    required this.customerName,
-    required this.phone,
-    required this.itemName,
-    required this.price,
-    this.isAddedToCart = false,
-  });
-
-  factory Order.fromJson(Map<String, dynamic> json) {
-    return Order(
-      id: json['_id'],
-      customerName: json['recipient']['name'],
-      phone: json['recipient']['phone'],
-      itemName: json['items'][0]['name'],
-      price: json['totalAmount'].toDouble(),
-    );
-  }
-}
+import 'package:delivery_app/models/order.dart'; 
+import 'package:delivery_app/pages/home-user-sender/list-add-menu/CartPage.dart';
+import 'package:delivery_app/pages/home-user-sender/list-add-menu/all-page.dart';
+import 'package:delivery_app/pages/home-user-sender/list-menu.dart';
+import 'package:delivery_app/pages/home-user-sender/profile-sender.dart';
 
 class HomesenderPage extends StatefulWidget {
   const HomesenderPage({super.key});
@@ -52,7 +26,7 @@ class _HomesenderPageState extends State<HomesenderPage> {
   bool isLoading = false;
   TextEditingController searchController = TextEditingController();
 
-  final String url = 'http://10.210.60.215:8081/api/orders/';
+  final String url = 'https://back-deliverys.onrender.com/api/orders/';
 
   @override
   void initState() {
@@ -84,27 +58,62 @@ class _HomesenderPageState extends State<HomesenderPage> {
     }
   }
 
+  Future<void> updateOrder(Order order) async {
+    final String updateUrl =
+        'https://back-deliverys.onrender.com/api/orders/${order.id}';
+    try {
+      final response = await http.put(
+        Uri.parse(updateUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'items': [
+            {
+              'name': order.itemName,
+              'orders': order.orders, // ส่งค่า orders ที่เปลี่ยนแปลงไปยัง API
+              'quantity': 2,
+              'price': 100,
+            }
+          ],
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        log('Order updated successfully');
+      } else {
+        throw Exception('Failed to update order');
+      }
+    } catch (e) {
+      log('Error updating order: $e');
+    }
+  }
+
   void searchOrders(String query) {
     setState(() {
-      filteredOrders = orders.where((order) =>
-          order.customerName.toLowerCase().contains(query.toLowerCase()) ||
-          order.phone.toLowerCase().contains(query.toLowerCase())).toList();
+      filteredOrders = orders
+          .where((order) =>
+              order.customerName.toLowerCase().contains(query.toLowerCase()) ||
+              order.phone.toLowerCase().contains(query.toLowerCase()))
+          .toList();
     });
   }
 
   void addToCart(Order order) {
     setState(() {
-      order.isAddedToCart = true;
+      order.orders = 0; // เมื่อเพิ่มในตะกร้า เซ็ตค่าเป็น 0
       cartOrders.add(order);
+      updateOrder(order); // อัพเดตค่าลงในฐานข้อมูล
     });
   }
 
-  void removeFromCart(Order order) {
-    setState(() {
-      order.isAddedToCart = false; // เปลี่ยนสถานะกลับไปที่ไม่เพิ่มในตะกร้า
-      cartOrders.remove(order); // ลบคำสั่งออกจากตะกร้า
-    });
-  }
+  // void removeFromCart(Order order) {
+  //   setState(() {
+  //     order.orders = 1; // เมื่อเอาออกจากตะกร้า เซ็ตค่าเป็น 1
+  //     cartOrders.remove(order);
+  //     updateOrder(order); // อัพเดตค่าลงในฐานข้อมูล
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -149,7 +158,8 @@ class _HomesenderPageState extends State<HomesenderPage> {
               children: [
                 Text(
                   'Orders',
-                  style: GoogleFonts.itim(fontSize: 22, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.itim(
+                      fontSize: 22, fontWeight: FontWeight.bold),
                 ),
                 InkWell(
                   onTap: () {
@@ -159,15 +169,16 @@ class _HomesenderPageState extends State<HomesenderPage> {
                       backgroundColor: Colors.transparent,
                       builder: (context) {
                         return CartPage(
-                          cartOrders: cartOrders,
-                          onRemove: removeFromCart, // ส่งฟังก์ชันนี้ไปยัง CartPage
+                          cartOrders:
+                              cartOrders, // ส่งรายการสินค้าในตะกร้าไปยัง CartPage
                         );
                       },
                     );
                   },
                   child: Text(
                     'Cart',
-                    style: GoogleFonts.itim(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: GoogleFonts.itim(
+                        fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -200,7 +211,8 @@ class _HomesenderPageState extends State<HomesenderPage> {
                   borderRadius: BorderRadius.circular(20),
                 ),
               ),
-              child: Text('ค้นหาผู้รับสินค้า', style: GoogleFonts.itim(fontSize: 14)),
+              child: Text('ค้นหาผู้รับสินค้า',
+                  style: GoogleFonts.itim(fontSize: 14)),
             ),
           ),
           const Center(
@@ -216,10 +228,11 @@ class _HomesenderPageState extends State<HomesenderPage> {
                     itemCount: filteredOrders.length,
                     itemBuilder: (context, index) {
                       final order = filteredOrders[index];
-                      return order.isAddedToCart
-                          ? Container() // ซ่อนสินค้าเมื่อเพิ่มไปยังตะกร้าแล้ว
-                          : Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      return order.orders ==
+                              1 // แสดงเฉพาะสินค้าที่มี orders เป็น 1
+                          ? Container(
+                              margin: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(8),
@@ -238,7 +251,8 @@ class _HomesenderPageState extends State<HomesenderPage> {
                                   Padding(
                                     padding: const EdgeInsets.all(12),
                                     child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Container(
                                           width: 60,
@@ -248,7 +262,8 @@ class _HomesenderPageState extends State<HomesenderPage> {
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 order.customerName,
@@ -276,44 +291,18 @@ class _HomesenderPageState extends State<HomesenderPage> {
                                             ],
                                           ),
                                         ),
+                                        GestureDetector(
+                                          onTap: () => addToCart(order),
+                                          child: const Icon(
+                                              Icons.add_shopping_cart),
+                                        ),
                                       ],
                                     ),
                                   ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      ElevatedButton(
-                                        onPressed: () {
-                                          addToCart(order);
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.orange,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(20),
-                                          ),
-                                        ),
-                                        child: Text('เพิ่ม', style: GoogleFonts.itim(color: Colors.white)),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      TextButton(
-                                        onPressed: () {
-                                          // Implement cancel order functionality
-                                        },
-                                        style: TextButton.styleFrom(
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(20),
-                                            side: const BorderSide(color: Colors.red),
-                                          ),
-                                        ),
-                                        child: Text('Cancel', style: GoogleFonts.itim(color: Colors.red)),
-                                      ),
-                                      const SizedBox(width: 12),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
                                 ],
                               ),
-                            );
+                            )
+                          : const SizedBox();
                     },
                   ),
           ),
@@ -367,13 +356,20 @@ class _HomesenderPageState extends State<HomesenderPage> {
         });
         switch (_selectedIndex) {
           case 1:
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const allpage()));
+            Navigator.push(context,
+                MaterialPageRoute(builder: (context) => const allpage()));
             break;
           case 2:
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const MenusenderPage()));
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const MenusenderPage()));
             break;
           case 3:
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const SendProfileScreen()));
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const SendProfileScreen()));
             break;
         }
       },
