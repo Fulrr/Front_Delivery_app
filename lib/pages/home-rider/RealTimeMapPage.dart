@@ -55,10 +55,10 @@ class _RealTimeMapPageState extends State<RealTimeMapPage>
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
-          _pickupLocation =
-              LatLng(data['pickup']['latitude'], data['pickup']['longitude']);
-          _deliveryLocation = LatLng(
-              data['delivery']['latitude'], data['delivery']['longitude']);
+          _pickupLocation = LatLng(data['pickupLocation']['latitude'],
+              data['pickupLocation']['longitude']);
+          _deliveryLocation = LatLng(data['deliveryLocation']['latitude'],
+              data['deliveryLocation']['longitude']);
         });
       }
     } catch (e) {
@@ -85,16 +85,10 @@ class _RealTimeMapPageState extends State<RealTimeMapPage>
         if (permission != PermissionStatus.granted) return;
       }
 
-      // var userLocation = await _location.getLocation();
-      // setState(() {
-      //   _currentPosition =
-      //       LatLng(userLocation.latitude!, userLocation.longitude!);
-      //   _mapReady = true;
-      // });
-      // ตั้งค่าพิกัด rider ให้อยู่ที่มหาวิทยาลัยมหาสารคาม
+      // ตั้งค่าพิกัดไรเดอร์ให้อยู่ที่มหาวิทยาลัยมหาสารคาม
       setState(() {
         _currentPosition =
-            LatLng(16.2459, 103.2502); // พิกัดมหาวิทยาลัยมหาสารคาม
+            LatLng(15.9717, 102.6216); // พิกัดมหาวิทยาลัยมหาสารคาม
         _mapReady = true;
       });
 
@@ -226,7 +220,7 @@ class _RealTimeMapPageState extends State<RealTimeMapPage>
           body: jsonEncode({
             'riderId': userId,
             'deliveryTime': DateTime.now().toIso8601String(),
-            'location': {
+            'deliveryLocation': {
               'latitude': _currentPosition.latitude,
               'longitude': _currentPosition.longitude,
             },
@@ -433,7 +427,7 @@ class _RealTimeMapPageState extends State<RealTimeMapPage>
           'status': 'shipped',
           'riderId': userId,
           'pickupTime': DateTime.now().toIso8601String(),
-          'location': {
+          'pickupLocation': {
             'latitude': _currentPosition.latitude,
             'longitude': _currentPosition.longitude,
           },
