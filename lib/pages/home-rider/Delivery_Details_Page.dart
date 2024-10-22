@@ -1,13 +1,24 @@
+// import 'package:delivery_app/pages/home-rider/RealTimeMapPage.dart';
+import 'package:delivery_app/pages/home-rider/RealTimeMapPage.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:delivery_app/config/config.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DeliveryDetailsPage extends StatelessWidget {
   final Map<String, dynamic> order;
+  String? riderId; // สร้างตัวแปรเพื่อเก็บ riderId
 
-  const DeliveryDetailsPage({Key? key, required this.order}) : super(key: key);
+  DeliveryDetailsPage({Key? key, required this.order}) : super(key: key) {
+    _getRiderId(); // เรียกใช้เมื่อสร้าง DeliveryDetailsPage
+  }
+
+  void _getRiderId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    riderId = prefs.getString('userId'); // ดึง riderId (userId ที่เก็บไว้)
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -174,6 +185,13 @@ class DeliveryDetailsPage extends StatelessWidget {
       width: double.infinity,
       child: ElevatedButton(
         onPressed: () async {
+          if (riderId == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('ไม่พบข้อมูล riderId')),
+            );
+            return;
+          }
+
           try {
             final response = await http.post(
               Uri.parse('${acceptOrder}/${order['_id']}/accept'),
@@ -181,7 +199,7 @@ class DeliveryDetailsPage extends StatelessWidget {
                 'Content-Type': 'application/json; charset=UTF-8',
               },
               body: jsonEncode(<String, String>{
-                'riderId': 'your_rider_id_here', // ต้องใส่ riderId ใน body
+                'riderId': riderId!,
               }),
             );
 
@@ -190,7 +208,13 @@ class DeliveryDetailsPage extends StatelessWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('คุณได้รับงานนี้แล้ว')),
               );
-              Navigator.pop(context);
+              // นำทางไปยังหน้า RealTimeMapPage แทนที่จะ pop
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => RealTimeMapPage(orderId: order['_id']),
+                ),
+              );
             } else {
               // API call failed
               ScaffoldMessenger.of(context).showSnackBar(
