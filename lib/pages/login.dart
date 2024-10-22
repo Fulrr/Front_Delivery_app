@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:developer' as dev;
 import 'package:delivery_app/config/config.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -66,9 +67,15 @@ class _LoginScreenState extends State<LoginScreen>
         if (jsonResponse['status']) {
           var myToken = jsonResponse['token'];
           var userType = jsonResponse['userType'];
+          // Decode token เพื่อดึง userId
+          var decodedToken = JwtDecoder.decode(myToken);
+          var userId = decodedToken[
+              '_id']; // หรือใช้ 'userId' ตามที่คุณตั้งชื่อใน payload
+
+          // เก็บ userId ใน SharedPreferences
+          prefs.setString('userId', userId);
           prefs.setString('token', myToken);
           prefs.setString('userType', userType);
-
           if (userType == 'user') {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (context) => const FoodHomeScreen()),
@@ -215,7 +222,8 @@ class _LoginScreenState extends State<LoginScreen>
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                              builder: (context) => SignUpScreen()),
+                                              builder: (context) =>
+                                                  SignUpScreen()),
                                         );
                                       },
                                       child: const Text(
@@ -240,7 +248,8 @@ class _LoginScreenState extends State<LoginScreen>
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                              builder: (context) => SignUpRider()),
+                                              builder: (context) =>
+                                                  SignUpRider()),
                                         );
                                       },
                                       child: const Text(
