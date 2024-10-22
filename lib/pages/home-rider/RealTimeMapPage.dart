@@ -32,12 +32,38 @@ class _RealTimeMapPageState extends State<RealTimeMapPage>
   Timer? _locationUpdateTimer;
   bool _isFollowingUser = true;
 
+  // เพิ่มตัวแปรเก็บพิกัด
+  LatLng? _pickupLocation;
+  LatLng? _deliveryLocation;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _initializeLocation();
     _getUserId();
+  }
+
+  // เพิ่มฟังก์ชันโหลดพิกัดจุดรับ-ส่ง
+  Future<void> _loadOrderLocations() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${getOrderLocations}/${widget.orderId}'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          _pickupLocation =
+              LatLng(data['pickup']['latitude'], data['pickup']['longitude']);
+          _deliveryLocation = LatLng(
+              data['delivery']['latitude'], data['delivery']['longitude']);
+        });
+      }
+    } catch (e) {
+      _showErrorDialog("ไม่สามารถโหลดข้อมูลพิกัดได้");
+    }
   }
 
   void _getUserId() async {
@@ -59,10 +85,16 @@ class _RealTimeMapPageState extends State<RealTimeMapPage>
         if (permission != PermissionStatus.granted) return;
       }
 
-      var userLocation = await _location.getLocation();
+      // var userLocation = await _location.getLocation();
+      // setState(() {
+      //   _currentPosition =
+      //       LatLng(userLocation.latitude!, userLocation.longitude!);
+      //   _mapReady = true;
+      // });
+      // ตั้งค่าพิกัด rider ให้อยู่ที่มหาวิทยาลัยมหาสารคาม
       setState(() {
         _currentPosition =
-            LatLng(userLocation.latitude!, userLocation.longitude!);
+            LatLng(16.2459, 103.2502); // พิกัดมหาวิทยาลัยมหาสารคาม
         _mapReady = true;
       });
 
@@ -157,41 +189,34 @@ class _RealTimeMapPageState extends State<RealTimeMapPage>
     }
   }
 
-  void _confirmPickup() async {
-    try {
-      await _takePhoto();
-      if (_images.isNotEmpty) {
-        await _uploadImages();
-        final response = await http.put(
-          Uri.parse('${updateOrderStatus}/${widget.orderId}/status'),
-          headers: {'Content-Type': 'application/json; charset=UTF-8'},
-          body: jsonEncode({
-            'status': 'shipped',
-            'riderId': userId,
-            'pickupTime': DateTime.now().toIso8601String(),
-            'location': {
-              'latitude': _currentPosition.latitude,
-              'longitude': _currentPosition.longitude,
-            },
-          }),
-        );
-
-        if (response.statusCode == 200) {
-          setState(() => _hasPickedUp = true);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('รับสินค้าเรียบร้อยแล้ว'),
-                backgroundColor: Colors.green),
-          );
-        }
-      }
-    } catch (e) {
-      _showErrorDialog("เกิดข้อผิดพลาด กรุณาลองใหม่");
+  // ฟังก์ชันตรวจสอบระยะห่าง
+  Future<bool> _validateDistance(LatLng? targetLocation) async {
+    if (targetLocation == null) {
+      _showErrorDialog("ไม่พบข้อมูลพิกัด");
+      return false;
     }
+
+    final distance =
+        Distance().as(LengthUnit.Meter, _currentPosition, targetLocation);
+
+    if (distance > 20) {
+      _showErrorDialog(
+          "กรุณาเข้าใกล้จุดหมายมากกว่านี้ (ระยะห่างไม่เกิน 20 เมตร)\n"
+          "ระยะห่างปัจจุบัน: ${distance.toStringAsFixed(1)} เมตร");
+      return false;
+    }
+
+    return true;
   }
 
+  // ฟังก์ชันยืนยันการส่งสินค้า
   void _completeDelivery() async {
     try {
+      // ตรวจสอบระยะห่างจากจุดส่งสินค้า
+      if (!await _validateDistance(_deliveryLocation)) {
+        return;
+      }
+
       await _takePhoto();
       if (_images.isNotEmpty) {
         await _uploadImages();
@@ -280,6 +305,7 @@ class _RealTimeMapPageState extends State<RealTimeMapPage>
             ),
             MarkerLayer(
               markers: [
+                // ตำแหน่งไรเดอร์
                 Marker(
                   point: _currentPosition,
                   width: 80,
@@ -287,6 +313,22 @@ class _RealTimeMapPageState extends State<RealTimeMapPage>
                   child:
                       Icon(Icons.delivery_dining, color: Colors.blue, size: 40),
                 ),
+                // จุดรับสินค้า
+                if (_pickupLocation != null && !_hasPickedUp)
+                  Marker(
+                    point: _pickupLocation!,
+                    width: 80,
+                    height: 80,
+                    child: Icon(Icons.store, color: Colors.green, size: 40),
+                  ),
+                // จุดส่งสินค้า
+                if (_deliveryLocation != null && _hasPickedUp && !_isDelivered)
+                  Marker(
+                    point: _deliveryLocation!,
+                    width: 80,
+                    height: 80,
+                    child: Icon(Icons.location_on, color: Colors.red, size: 40),
+                  ),
               ],
             ),
           ],
@@ -363,5 +405,54 @@ class _RealTimeMapPageState extends State<RealTimeMapPage>
       }
     }
     super.dispose();
+  }
+
+  // ฟังก์ชันยืนยันการรับสินค้า
+  void _confirmPickup() async {
+    try {
+      // ตรวจสอบระยะห่างจากจุดรับสินค้า
+      if (!await _validateDistance(_pickupLocation)) {
+        _showErrorDialog("คุณอยู่ห่างจากจุดรับสินค้ามากเกินไป");
+        return;
+      }
+
+      await _takePhoto();
+      if (_images.isEmpty) {
+        _showErrorDialog("กรุณาถ่ายรูปสินค้า");
+        return;
+      }
+
+      // อัพโหลดรูปภาพ
+      await _uploadImages();
+
+      // อัพเดทสถานะ
+      final response = await http.put(
+        Uri.parse('${updateOrderStatus}/${widget.orderId}/status'),
+        headers: {'Content-Type': 'application/json; charset=UTF-8'},
+        body: jsonEncode({
+          'status': 'shipped',
+          'riderId': userId,
+          'pickupTime': DateTime.now().toIso8601String(),
+          'location': {
+            'latitude': _currentPosition.latitude,
+            'longitude': _currentPosition.longitude,
+          },
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        setState(() => _hasPickedUp = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('รับสินค้าเรียบร้อยแล้ว'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        throw Exception('ไม่สามารถอัพเดทสถานะได้');
+      }
+    } catch (e) {
+      _showErrorDialog("เกิดข้อผิดพลาด กรุณาลองใหม่");
+    }
   }
 }

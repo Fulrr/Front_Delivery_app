@@ -7,3 +7,4 @@ final updateLocation = url + "/location/update";
 final uploadDeliveryImages = url + "/orders/rider";
 final completeDelivery = url + "/orders/rider";
 final updateOrderStatus = url + "/orders/rider";
+final getOrderLocations = url + "/location/order";
