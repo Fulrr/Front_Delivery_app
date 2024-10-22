@@ -67,14 +67,15 @@ class _HomesenderPageState extends State<HomesenderPage> {
           'Content-Type': 'application/json',
         },
         body: json.encode({
-          'items': [
-            {
-              'name': order.itemName,
-              'orders': order.orders, // ส่งค่า orders ที่เปลี่ยนแปลงไปยัง API
-              'quantity': 2,
-              'price': 100,
-            }
-          ],
+          'items': order.items
+              .map((item) => {
+                    'name': item.name,
+                    'orders':
+                        item.orders, // อัพเดตค่า orders ของสินค้าแต่ละรายการ
+                    "quantity": item.quantity, // จำนวนสินค้าจากรายการ
+                    "price": item.price, // ราคาใหม่
+                  })
+              .toList(),
         }),
       );
 
@@ -92,15 +93,19 @@ class _HomesenderPageState extends State<HomesenderPage> {
     setState(() {
       filteredOrders = orders
           .where((order) =>
-              order.customerName.toLowerCase().contains(query.toLowerCase()) ||
-              order.phone.toLowerCase().contains(query.toLowerCase()))
+              order.recipient.name
+                  .toLowerCase()
+                  .contains(query.toLowerCase()) ||
+              order.recipient.phone.toLowerCase().contains(query.toLowerCase()))
           .toList();
     });
   }
 
   void addToCart(Order order) {
     setState(() {
-      order.orders = 0; // เมื่อเพิ่มในตะกร้า เซ็ตค่าเป็น 0
+      for (var item in order.items) {
+        item.orders = 0;
+      } // เมื่อเพิ่มในตะกร้า เซ็ตค่าเป็น 0
       updateOrder(order); // อัพเดตค่าลงในฐานข้อมูล
     });
   }
@@ -167,7 +172,7 @@ class _HomesenderPageState extends State<HomesenderPage> {
                       backgroundColor: Colors.transparent,
                       builder: (context) {
                         return CartPage(
-                          cartOrders: orders, 
+                          cartOrders: orders,
                         );
                       },
                     );
@@ -227,8 +232,9 @@ class _HomesenderPageState extends State<HomesenderPage> {
                     itemCount: filteredOrders.length,
                     itemBuilder: (context, index) {
                       final order = filteredOrders[index];
-                      return order.orders ==
-                              1 // แสดงเฉพาะสินค้าที่มี orders เป็น 1
+                      return order.items.any((item) =>
+                              item.orders ==
+                              1) // แสดงเฉพาะสินค้าที่มี orders เป็น 1
                           ? Container(
                               margin: const EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 8),
@@ -264,25 +270,27 @@ class _HomesenderPageState extends State<HomesenderPage> {
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: [
-                                              Text(
-                                                order.customerName,
-                                                style: GoogleFonts.itim(
-                                                  color: Colors.orange,
-                                                  fontWeight: FontWeight.bold,
+                                              // วนลูปเพื่อแสดงชื่อสินค้าแต่ละชิ้น
+                                              for (var item in order.items
+                                                  .where((item) =>
+                                                      item.orders == 1))
+                                                Text(
+                                                  item.name,
+                                                  style: GoogleFonts.itim(
+                                                    color: Colors.orange,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
                                                 ),
-                                              ),
                                               Text(
-                                                order.itemName,
-                                                style: GoogleFonts.itim(
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                              Text(
-                                                'ID: ${order.phone}',
+                                                order.recipient.name,
                                                 style: GoogleFonts.itim(),
                                               ),
                                               Text(
-                                                '\$${order.price.toStringAsFixed(2)}',
+                                                'Phone: ${order.recipient.phone}',
+                                                style: GoogleFonts.itim(),
+                                              ),
+                                              Text(
+                                                '\$${order.totalAmount.toStringAsFixed(2)}',
                                                 style: GoogleFonts.itim(
                                                   fontWeight: FontWeight.bold,
                                                 ),
@@ -301,7 +309,7 @@ class _HomesenderPageState extends State<HomesenderPage> {
                                 ],
                               ),
                             )
-                          : const SizedBox();
+                          : const SizedBox(); // Do not display if no item has orders == 1
                     },
                   ),
           ),

@@ -57,7 +57,7 @@ class _LunchPageState extends State<LunchPage> {
           Expanded(
             child: ListView(
               children: const [
-                OrderItem(name: 'Justin', dish: 'ListOders', id: '15253', price: 130),
+                OrderItem(name: 'Jussstin', dish: 'ListOders', id: '15253', price: 130),
                 OrderItem(name: 'Mailia', dish: 'ListOders', id: '21200', price: 325),
                 OrderItem(name: 'Korn', dish: 'ListOders', id: '53241', price: 245),
               ],

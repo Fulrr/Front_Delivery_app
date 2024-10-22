@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:delivery_app/pages/home-rider/home-rider.dart';
+import 'package:delivery_app/pages/home-user-sender/home-sender.dart';
 import 'package:delivery_app/pages/home_user/home-re.dart';
 import 'package:delivery_app/pages/reg-rider.dart';
 import 'package:delivery_app/pages/register.dart';
@@ -76,6 +77,10 @@ class _LoginScreenState extends State<LoginScreen>
           } else if (userType == 'rider') {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (context) => const HomeRiderPage()),
+            );
+          } else if (userType == 'send') {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const HomesenderPage()),
             );
           }
         } else {

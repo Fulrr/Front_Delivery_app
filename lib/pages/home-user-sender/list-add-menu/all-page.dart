@@ -17,7 +17,7 @@ class allpage extends StatefulWidget {
 class _allpageState extends State<allpage> {
   int _selectedIndex = 0;
   int _selectedTabIndex = 0;
-
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
