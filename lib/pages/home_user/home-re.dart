@@ -1,7 +1,9 @@
-// ignore_for_file: file_names
+import 'dart:async';
 
+import 'package:delivery_app/models/food_model.dart';
 import 'package:delivery_app/pages/food-OR-setting/choose_food.dart';
 import 'package:delivery_app/pages/home_user/profile.dart';
+import 'package:delivery_app/services/food_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -11,12 +13,111 @@ class FoodHomeScreen extends StatefulWidget {
   const FoodHomeScreen({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _FoodHomeScreenState createState() => _FoodHomeScreenState();
 }
 
 class _FoodHomeScreenState extends State<FoodHomeScreen> {
   int _selectedIndex = 0;
+  final FoodService _foodService = FoodService();
+  List<Food> _foods = [];
+  List<Food> _filteredFoods = [];
+  bool _isLoading = true;
+  String _error = '';
+  String _selectedCategory = 'All';
+  final TextEditingController _searchController = TextEditingController();
+  final List<String> _categories = ['All', 'Combos', 'Sliders', 'Classic'];
+
+  // Update initState to include debouncing
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFoods();
+    _searchController.addListener(() {
+      if (_debounce?.isActive ?? false) _debounce!.cancel();
+      _debounce = Timer(const Duration(milliseconds: 500), () {
+        _onSearchChanged();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    if (_searchController.text.isEmpty) {
+      setState(() {
+        _filteredFoods = _foods;
+      });
+    } else {
+      _searchFoods();
+    }
+  }
+
+  Future<void> _searchFoods() async {
+    try {
+      final searchResults =
+          await _foodService.searchFoodsByName(_searchController.text);
+      setState(() {
+        _filteredFoods = searchResults.where((food) {
+          final matchesCategory =
+              _selectedCategory == 'All' || food.category == _selectedCategory;
+          return matchesCategory;
+        }).toList();
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+      });
+      // Optionally show a snackbar or other error indication
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error searching foods: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _filterFoods() {
+    setState(() {
+      _filteredFoods = _foods.where((food) {
+        final matchesSearch = food.name.toLowerCase().contains(
+                  _searchController.text.toLowerCase(),
+                ) ||
+            food.description.toLowerCase().contains(
+                  _searchController.text.toLowerCase(),
+                );
+
+        final matchesCategory =
+            _selectedCategory == 'All' || food.category == _selectedCategory;
+
+        return matchesSearch && matchesCategory;
+      }).toList();
+    });
+  }
+
+  Future<void> _loadFoods() async {
+    try {
+      setState(() => _isLoading = true);
+      final foods = await _foodService.getFoods();
+      setState(() {
+        _foods = foods;
+        _filteredFoods = foods;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,23 +140,28 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
           SizedBox(width: 10),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Order your favourite food!',
-              style: GoogleFonts.fredoka(
-                  fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            _buildSearchField(),
-            const SizedBox(height: 16),
-            _buildCategoryChips(),
-            const SizedBox(height: 16),
-            _buildFoodGrid(),
-          ],
+      body: RefreshIndicator(
+        onRefresh: _loadFoods,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Order your favourite food!',
+                style: GoogleFonts.fredoka(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildSearchField(),
+              const SizedBox(height: 16),
+              _buildCategoryChips(),
+              const SizedBox(height: 16),
+              _buildFoodGrid(),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
@@ -66,14 +172,24 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
 
   Widget _buildSearchField() {
     return TextField(
+      controller: _searchController,
       decoration: InputDecoration(
         hintText: 'Search',
         prefixIcon: const Icon(Icons.search),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
         ),
+        suffixIcon: _searchController.text.isNotEmpty
+            ? IconButton(
+                icon: const Icon(Icons.clear),
+                onPressed: () {
+                  _searchController.clear();
+                  _filterFoods();
+                },
+              )
+            : null,
       ),
-      style: GoogleFonts.fredoka(), // Apply font style here
+      style: GoogleFonts.fredoka(),
     );
   }
 
@@ -81,26 +197,269 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: [
-          _buildCategoryChip('All', isSelected: true),
-          _buildCategoryChip('Combos'),
-          _buildCategoryChip('Sliders'),
-          _buildCategoryChip('Cla'),
-        ],
+        children: _categories
+            .map((category) => _buildCategoryChip(
+                  category,
+                  isSelected: _selectedCategory == category,
+                ))
+            .toList(),
+      ),
+    );
+  }
+
+  Widget _buildCategoryChip(String label, {bool isSelected = false}) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      child: FilterChip(
+        label: Text(
+          label,
+          style: GoogleFonts.fredoka(
+            color: isSelected ? Colors.white : Colors.black,
+          ),
+        ),
+        selected: isSelected,
+        onSelected: (selected) {
+          setState(() {
+            _selectedCategory = selected ? label : 'All';
+            _filterFoods();
+          });
+        },
+        backgroundColor: Colors.grey[200],
+        selectedColor: Colors.red,
       ),
     );
   }
 
   Widget _buildFoodGrid() {
+    if (_isLoading) {
+      return const Expanded(
+        child: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (_error.isNotEmpty) {
+      return _buildErrorState();
+    }
+
+    if (_filteredFoods.isEmpty) {
+      return _buildEmptyState();
+    }
+
     return Expanded(
-      child: GridView.count(
-        crossAxisCount: 2,
-        children: [
-          _buildFoodItem('Cheeseburger', "Wendy's Burger", 4.9),
-          _buildFoodItem('Hamburger', 'Veggie Burger', 4.8),
-          _buildFoodItem('Chicken Burger', 'Grilled Chicken Burger', 4.6),
-          _buildFoodItem('Fried Chicken', 'Crispy Fried Chicken', 4.5),
-        ],
+      child: GridView.builder(
+        padding: const EdgeInsets.only(
+            bottom: 80), // เพิ่ม padding ด้านล่างให้มากขึ้นเพื่อหลีกเลี่ยง FAB
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.75, // ปรับอัตราส่วนให้เหมาะสม
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+        ),
+        itemCount: _filteredFoods.length,
+        itemBuilder: (context, index) {
+          final food = _filteredFoods[index];
+          return _buildFoodItem(food);
+        },
+      ),
+    );
+  }
+
+  Widget _buildFoodItem(Food food) {
+    return InkWell(
+      onTap: () {
+        // เมื่อคลิกที่อาหาร ให้ไปที่หน้า FoodOrderComponent
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => FoodOrderComponent(selectedFood: food),
+          ),
+        );
+      },
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 3,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+                child: CachedNetworkImage(
+                  imageUrl: food.imageUrl,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  placeholder: (context, url) => const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                  errorWidget: (context, url, error) => const Center(
+                    child: Icon(Icons.error),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      food.name,
+                      style: GoogleFonts.fredoka(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      food.description,
+                      style: GoogleFonts.fredoka(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const Spacer(),
+                    Text(
+                      '\$${food.price.toStringAsFixed(2)}',
+                      style: GoogleFonts.fredoka(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+// Add these methods inside the _FoodHomeScreenState class
+
+  Widget _buildErrorState() {
+    return Expanded(
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 60,
+              color: Colors.red[300],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Oops! Something went wrong',
+              style: GoogleFonts.fredoka(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _error,
+              style: GoogleFonts.fredoka(
+                color: Colors.grey[600],
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _loadFoods,
+              icon: const Icon(Icons.refresh),
+              label: Text(
+                'Try Again',
+                style: GoogleFonts.fredoka(),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Expanded(
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 60,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No foods found',
+              style: GoogleFonts.fredoka(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Try adjusting your search or filters',
+              style: GoogleFonts.fredoka(
+                color: Colors.grey[600],
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            if (_searchController.text.isNotEmpty || _selectedCategory != 'All')
+              ElevatedButton.icon(
+                onPressed: () {
+                  _searchController.clear();
+                  setState(() {
+                    _selectedCategory = 'All';
+                    _filterFoods();
+                  });
+                },
+                icon: const Icon(Icons.clear),
+                label: Text(
+                  'Clear Filters',
+                  style: GoogleFonts.fredoka(),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -128,7 +487,7 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
             children: <Widget>[
               _buildNavItem(Icons.home, '●', 0),
               _buildNavItem(Icons.person, '', 1),
-              const SizedBox(width: 60), // Space for FAB
+              const SizedBox(width: 60),
               _buildNavItem(Icons.shopping_cart, '', 2),
               _buildNavItem(Icons.favorite, '', 3),
             ],
@@ -163,12 +522,12 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
         children: [
           Icon(
             icon,
-            color: _selectedIndex == index ? Colors.white : Colors.white,
+            color: _selectedIndex == index ? Colors.white : Colors.white70,
           ),
           Text(
             label,
             style: TextStyle(
-              color: _selectedIndex == index ? Colors.white : Colors.white,
+              color: _selectedIndex == index ? Colors.white : Colors.white70,
               fontSize: 10,
             ),
           ),
@@ -199,86 +558,6 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
           width: 65,
           height: 65,
           child: Icon(Icons.add, size: 35, color: Colors.white),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoryChip(String label, {bool isSelected = false}) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      child: Chip(
-        label: Text(
-          label,
-          style: GoogleFonts.fredoka(), // Apply font style here
-        ),
-        backgroundColor: isSelected ? Colors.red : Colors.grey[200],
-        labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black),
-      ),
-    );
-  }
-
-  Widget _buildFoodItem(String title, String subtitle, double rating) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const FoodOrderComponent(),
-          ),
-        );
-      },
-      child: Card(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Container(
-                color: Colors.grey[200],
-                child: Center(
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(20),
-                        topRight: Radius.circular(20),
-                      ),
-                      image: DecorationImage(
-                        image: NetworkImage(
-                            'https://i.pinimg.com/originals/6a/5f/4d/6a5f4d604102449b2737e792fecb23d2.jpg'),
-                        fit: BoxFit.fill,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.fredoka(fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    subtitle,
-                    style: GoogleFonts.fredoka(),
-                  ),
-                  Row(
-                    children: [
-                      const Icon(Icons.star, color: Colors.yellow, size: 16),
-                      const SizedBox(width: 4),
-                      Text(
-                        rating.toString(),
-                        style: GoogleFonts.fredoka(),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
         ),
       ),
     );

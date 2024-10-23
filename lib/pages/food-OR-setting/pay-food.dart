@@ -1,44 +1,54 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:google_fonts/google_fonts.dart'; // ใช้สำหรับไอคอน CreditCard ถ้าต้องการ
+import 'package:google_fonts/google_fonts.dart';
+import 'package:delivery_app/models/food_model.dart'; // นำเข้าโมเดล Food
 
 class PaymentPage extends StatefulWidget {
-  const PaymentPage({super.key});
+  final Food food;
+  final int quantity;
+
+  const PaymentPage({super.key, required this.food, required this.quantity});
 
   @override
   _PaymentPageState createState() => _PaymentPageState();
 }
 
 class _PaymentPageState extends State<PaymentPage> {
-  bool saveCard = false;
-
   @override
   Widget build(BuildContext context) {
+    // คำนวณราคาทั้งหมด
+    double totalPrice = widget.food.price * widget.quantity;
+
     return Scaffold(
       appBar: AppBar(
-          // title: const Text('Payment Page'),
-          // backgroundColor: Colors.black,
-          ),
+        title: Text(
+          'Payment Summary',
+          style: GoogleFonts.lato(
+              color: Colors.black, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Order summary',
-              style: GoogleFonts.lato(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+              'Order Summary',
+              style:
+                  GoogleFonts.lato(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            _buildSummaryRow('Order', '\$16.48'),
-            _buildSummaryRow('Taxes', '\$0.30'),
-            _buildSummaryRow('Delivery fees', '\$1.50'),
+            // แสดงชื่ออาหารและจำนวนที่สั่ง
+            _buildSummaryRow(
+              widget.food.name,
+              '\$${widget.food.price.toStringAsFixed(2)} x ${widget.quantity}',
+            ),
             const Divider(),
             _buildSummaryRow(
               'Total:',
-              '\$18.19',
+              '\$${totalPrice.toStringAsFixed(2)}',
               isBold: true,
             ),
             const SizedBox(height: 8),
@@ -50,41 +60,13 @@ class _PaymentPageState extends State<PaymentPage> {
               ),
             ),
             const SizedBox(height: 24),
-            Text(
-              'Payment methods',
-              style: GoogleFonts.lato(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            _buildPaymentMethod('Credit card', '5105 •••• •••• 0505', true),
-            _buildPaymentMethod('Debit card', '3566 •••• •••• 0505', false),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Checkbox(
-                  value: saveCard,
-                  onChanged: (bool? value) {
-                    setState(() {
-                      saveCard = value!;
-                    });
-                  },
-                ),
-                Expanded(
-                  child: Text(
-                    'Save card details for future payments',
-                    style: GoogleFonts.lato(color: Colors.grey[700]),
-                  ),
-                ),
-              ],
-            ),
+            _buildDeliveryInfo(),
             const Spacer(),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '\$18.19',
+                  '\$${totalPrice.toStringAsFixed(2)}',
                   style: GoogleFonts.lato(
                     fontSize: 24,
                     color: Colors.red,
@@ -100,8 +82,10 @@ class _PaymentPageState extends State<PaymentPage> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 24, vertical: 12),
                   ),
-                  child: const Text('Pay Now',
-                      style: TextStyle(color: Colors.white)),
+                  child: const Text(
+                    'Pay Now',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ],
             ),
@@ -111,6 +95,7 @@ class _PaymentPageState extends State<PaymentPage> {
     );
   }
 
+  // ฟังก์ชันสร้างแถวสรุปรายการอาหาร
   Widget _buildSummaryRow(String title, String value, {bool isBold = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -118,48 +103,47 @@ class _PaymentPageState extends State<PaymentPage> {
         Text(title,
             style: GoogleFonts.lato(
                 fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
-        Text(
-          value,
-          style: GoogleFonts.lato(
+        Text(value,
+            style: GoogleFonts.lato(
                 fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
       ],
     );
   }
 
-  Widget _buildPaymentMethod(String title, String cardNumber, bool isSelected) {
-    return Container(
-      decoration: BoxDecoration(
-        color: isSelected ? Colors.grey[400] : Colors.white,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              SvgPicture.asset(
-                'assets/credit-card.svg', // เปลี่ยนเป็นที่อยู่ไฟล์ไอคอนของคุณ
-                height: 24,
-                width: 24,
+  // ฟังก์ชันแสดงข้อมูลการจัดส่งเพิ่มเติม
+  Widget _buildDeliveryInfo() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Delivery Information',
+          style: GoogleFonts.lato(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            const Icon(Icons.location_on, color: Colors.black),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '123 Main Street, New York, NY 10001',
+                style: GoogleFonts.lato(color: Colors.grey[600]),
               ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: GoogleFonts.lato(fontWeight: FontWeight.bold)),
-                  Text(cardNumber, style: GoogleFonts.lato(color: Colors.grey[600])),
-                ],
-              ),
-            ],
-          ),
-          if (isSelected)
-            const Icon(Icons.radio_button_checked, color: Colors.white)
-          else
-            const Icon(Icons.radio_button_unchecked, color: Colors.grey),
-        ],
-      ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            const Icon(Icons.phone, color: Colors.black),
+            const SizedBox(width: 8),
+            Text(
+              '+1 234 567 8901',
+              style: GoogleFonts.lato(color: Colors.grey[600]),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
