@@ -9,3 +9,7 @@ final completeDelivery = url + "/orders/rider";
 final updateOrderStatus = url + "/orders/rider";
 final getOrderLocations = url + "/location/order-locations";
 final getRiderLocation = url + "/location/rider";
+
+//food
+final getAllFood = url + "/foods";
+final getFoodByName = url + "/foods/name";

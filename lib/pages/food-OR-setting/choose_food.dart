@@ -1,11 +1,12 @@
 // ignore_for_file: library_private_types_in_public_api, deprecated_member_use
 
+import 'package:delivery_app/models/food_model.dart';
 import 'package:delivery_app/pages/food-OR-setting/pay-food.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class FoodOrderComponent extends StatefulWidget {
-  const FoodOrderComponent({super.key});
+  const FoodOrderComponent({super.key, required Food selectedFood});
 
   @override
   _FoodOrderComponentState createState() => _FoodOrderComponentState();
@@ -87,8 +88,8 @@ class _FoodOrderComponentState extends State<FoodOrderComponent> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text("Portion",
-                            style: GoogleFonts.lato(
-                                fontWeight: FontWeight.bold)),
+                            style:
+                                GoogleFonts.lato(fontWeight: FontWeight.bold)),
                         Row(
                           children: [
                             IconButton(
@@ -125,7 +126,10 @@ class _FoodOrderComponentState extends State<FoodOrderComponent> {
                         ),
                         ElevatedButton(
                           onPressed: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (context) => const PaymentPage()));
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const PaymentPage()));
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.black,
