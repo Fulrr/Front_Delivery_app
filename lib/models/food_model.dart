@@ -39,6 +39,8 @@ class Food {
     );
   }
 
+  get rating => null;
+
   // สำหรับแปลงข้อมูลเป็น JSON เมื่อต้องการส่งข้อมูลไป API
   Map<String, dynamic> toJson() {
     return {

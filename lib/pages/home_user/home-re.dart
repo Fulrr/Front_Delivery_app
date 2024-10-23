@@ -267,76 +267,86 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
   }
 
   Widget _buildFoodItem(Food food) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 3, // ปรับ flex ratio
-            child: ClipRRect(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
-              child: CachedNetworkImage(
-                // เปลี่ยนเป็น CachedNetworkImage
-                imageUrl: food.imageUrl,
-                fit: BoxFit.cover,
-                width: double.infinity,
-                placeholder: (context, url) => const Center(
-                  child: CircularProgressIndicator(),
+    return InkWell(
+      onTap: () {
+        // เมื่อคลิกที่อาหาร ให้ไปที่หน้า FoodOrderComponent
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => FoodOrderComponent(selectedFood: food),
+          ),
+        );
+      },
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 3,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
                 ),
-                errorWidget: (context, url, error) => const Center(
-                  child: Icon(Icons.error),
+                child: CachedNetworkImage(
+                  imageUrl: food.imageUrl,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  placeholder: (context, url) => const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                  errorWidget: (context, url, error) => const Center(
+                    child: Icon(Icons.error),
+                  ),
                 ),
               ),
             ),
-          ),
-          Expanded(
-            flex: 2, // ปรับ flex ratio
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min, // เพิ่ม mainAxisSize
-                children: [
-                  Text(
-                    food.name,
-                    style: GoogleFonts.fredoka(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      food.name,
+                      style: GoogleFonts.fredoka(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    food.description,
-                    style: GoogleFonts.fredoka(
-                      color: Colors.grey[600],
-                      fontSize: 12,
+                    const SizedBox(height: 2),
+                    Text(
+                      food.description,
+                      style: GoogleFonts.fredoka(
+                        color: Colors.grey[600],
+                        fontSize: 12,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const Spacer(),
-                  Text(
-                    '\$${food.price.toStringAsFixed(2)}',
-                    style: GoogleFonts.fredoka(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red,
-                      fontSize: 12,
+                    const Spacer(),
+                    Text(
+                      '\$${food.price.toStringAsFixed(2)}',
+                      style: GoogleFonts.fredoka(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                        fontSize: 12,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
