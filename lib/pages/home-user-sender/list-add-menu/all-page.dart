@@ -1,11 +1,13 @@
 // ignore_for_file: file_names, camel_case_types
 
-import 'package:delivery_app/pages/home-user-sender/add-menu.dart';
+import 'dart:convert';
 import 'package:delivery_app/pages/home-user-sender/home-sender.dart';
 import 'package:delivery_app/pages/home-user-sender/list-add-menu/Lunch.dart';
-import 'package:delivery_app/pages/home-user-sender/list-add-menu/list-order.dart';
 import 'package:delivery_app/pages/home-user-sender/profile-sender.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:delivery_app/pages/home-rider/Delivery_Details_Page.dart';
+import 'package:delivery_app/config/config.dart';
 
 class allpage extends StatefulWidget {
   const allpage({super.key});
@@ -15,128 +17,118 @@ class allpage extends StatefulWidget {
 }
 
 class _allpageState extends State<allpage> {
-  int _selectedIndex = 0;
-  int _selectedTabIndex = 0;
-  
+  int _selectedIndex = 1;
+  List<dynamic> orders = [];
+  bool isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchAvailableOrders();
+  }
+
+  Future<void> fetchAvailableOrders() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final response = await http.get(Uri.parse(getAvailableOrders));
+      if (response.statusCode == 200) {
+        setState(() {
+          orders = json.decode(response.body);
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to load orders');
+      }
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('เกิดข้อผิดพลาดในการโหลดข้อมูล: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.black),
-          onPressed: () {},
-        ),
-        title: const Row(
-          children: [
-            Text(
-              'LOCATION',
-              style: TextStyle(color: Colors.orange, fontSize: 14),
-            ),
-            SizedBox(width: 8),
-            Text(
-              'Halal Lab office',
-              style: TextStyle(color: Colors.black, fontSize: 16),
-            ),
-            Icon(Icons.arrow_drop_down, color: Colors.black),
-          ],
-        ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 16),
-            child: const CircleAvatar(
-              backgroundColor: Colors.grey,
-              radius: 15,
-            ),
-          ),
-        ],
+        title: const Text('Dalivery'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
         elevation: 0,
       ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildTabBar(),
-          const SizedBox(width: 60),
-          Expanded(
-            child: GestureDetector(
-              onTap: () {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent, // พื้นหลังโปร่งใส
-                  builder: (context) {
-                    return const listorders(); // แสดง listorders
-                  },
-                );
-              },
-              child: ListView(
-                children: const [
-                  OrderItem(list: 'L1', name: 'Jusin', id: '15253', totalAmounts: 300),
-                  OrderItem(list: 'L2', name: 'Tom', id: '21200', totalAmounts: 350),
-                  OrderItem(list: 'L3', name: 'Dolly', id: '53241', totalAmounts: 450),
-                ],
-              ),
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text(
+              'Menus',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
+          ),
+          Expanded(
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : orders.isEmpty
+                    ? const Center(
+                        child: Text('ไม่มีคำสั่งที่พร้อมให้รับในขณะนี้'))
+                    : ListView.builder(
+                        itemCount: orders
+                            .where((order) => order['items'][0]['orders'] == 3)
+                            .length,
+                        itemBuilder: (context, index) {
+                          final filteredOrders = orders
+                              .where(
+                                  (order) => order['items'][0]['orders'] == 3)
+                              .toList();
+                          final order = filteredOrders[index];
+
+                          return Card(
+                            margin: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                            child: ListTile(
+                              leading: Container(
+                                width: 60,
+                                height: 60,
+                                color: Colors.grey[300],
+                                child: order['imageUrls'].isNotEmpty
+                                    ? Image.network(order['imageUrls'][0],
+                                        fit: BoxFit.cover)
+                                    : const Icon(Icons.image_not_supported),
+                              ),
+                              title: Text(order['items'][0]['name']),
+                              subtitle: Text(
+                                  '฿${order['totalAmount'].toStringAsFixed(2)}'),
+                              trailing: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          LunchPage(order: order),
+                                    ),
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange,
+                                ),
+                                child: const Text('รายละเอียด'),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
           ),
         ],
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
       floatingActionButton: _buildFloatingActionButton(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-    );
-  }
-
-  Widget _buildTabBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildTabItem('All', 0),
-          _buildTabItem('List Orders', 1),
-          _buildTabItem('Lunch', 2),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTabItem(String title, int index) {
-    bool isSelected = _selectedTabIndex == index;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedTabIndex = index;
-        });
-        switch (_selectedTabIndex) {
-          case 1:
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const ListOrdersPage()),
-            );
-            break;
-          case 2:
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const LunchPage()),
-            );
-            break;
-        }
-      },
-      child: Column(
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 16,
-              color: isSelected ? Colors.orange : Colors.black,
-            ),
-          ),
-          if (isSelected)
-            Container(
-              height: 2,
-              width: 70,
-              color: Colors.orange,
-            ),
-        ],
-      ),
     );
   }
 
@@ -190,7 +182,8 @@ class _allpageState extends State<allpage> {
           case 3:
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const SendProfileScreen()),
+              MaterialPageRoute(
+                  builder: (context) => const SendProfileScreen()),
             );
             break;
         }
@@ -237,49 +230,6 @@ class _allpageState extends State<allpage> {
           height: 65,
           child: Icon(Icons.add, size: 35, color: Colors.white),
         ),
-      ),
-    );
-  }
-}
-
-class OrderItem extends StatelessWidget {
-  final String list;
-  final String name;
-  final String id;
-  final double totalAmounts;
-
-  const OrderItem({
-    super.key,
-    required this.list,
-    required this.name,
-    required this.id,
-    required this.totalAmounts,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            color: Colors.grey[300],
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(list, style: const TextStyle(color: Colors.orange)),
-                Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text('ID: $id', style: TextStyle(color: Colors.grey[600])),
-                Text('\$$totalAmounts', style: const TextStyle(fontWeight: FontWeight.bold)),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

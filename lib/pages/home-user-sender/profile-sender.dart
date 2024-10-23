@@ -1,26 +1,80 @@
+import 'dart:convert';
 import 'package:delivery_app/pages/home-user-sender/home-sender.dart';
 import 'package:delivery_app/pages/home-user-sender/list-menu.dart';
 import 'package:delivery_app/pages/list-on-profile-users/edit_profile.dart';
-import 'package:delivery_app/pages/list-on-profile-users/histrory.dart';
-import 'package:delivery_app/pages/list-on-profile-users/my-addr.dart';
-import 'package:delivery_app/pages/list-on-profile-users/payment.dart';
-import 'package:delivery_app/pages/home_user/home-re.dart';
 import 'package:delivery_app/pages/login.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'package:delivery_app/config/config.dart';
 
 class SendProfileScreen extends StatefulWidget {
   const SendProfileScreen({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _SendProfileScreenState createState() => _SendProfileScreenState();
 }
 
 class _SendProfileScreenState extends State<SendProfileScreen> {
-  int _selectedIndex = 1; // Set to 1 for Profile tab
+  int _selectedIndex = 1;
   String userType = 'user';
+  String userName = '';
+  String userEmail = '';
+  String userPhone = '';
+  String userImage = 'https://i.pinimg.com/564x/43/6b/47/436b47519f01232a329d90f75dbeb3f4.jpg';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? token = prefs.getString('token');
+      String? userId = prefs.getString('userId');
+
+      if (token != null && userId != null) {
+        var response = await http.get(
+          Uri.parse('https://back-deliverys.onrender.com/api/users/$userId'),
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer $token"
+          },
+        );
+
+        if (response.statusCode == 200) {
+          var userData = jsonDecode(response.body);
+          setState(() {
+            userName = userData['name'] ?? 'User';
+            userEmail = userData['email'] ?? 'email@example.com';
+            userPhone = userData['phone'] ?? '';
+            userImage = userData['profileImage'] ?? userImage;
+          });
+        } else {
+          print('Failed to load user data');
+        }
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
+    }
+  }
+
+  Future<void> _handleSignOut() async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (Route<dynamic> route) => false,
+      );
+    } catch (e) {
+      print('Error signing out: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -58,26 +112,30 @@ class _SendProfileScreenState extends State<SendProfileScreen> {
       color: const Color(0xFFef2a38),
       child: Row(
         children: [
-          const CircleAvatar(
+          CircleAvatar(
             radius: 30,
-            backgroundImage: NetworkImage(
-                'https://i.pinimg.com/564x/43/6b/47/436b47519f01232a329d90f75dbeb3f4.jpg'),
+            backgroundImage: NetworkImage(userImage),
           ),
           const SizedBox(width: 16),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'user0',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold),
+                  userName,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold
+                  ),
                 ),
                 Text(
-                  'user0@gmail.com',
-                  style: TextStyle(color: Colors.white70),
+                  userEmail,
+                  style: const TextStyle(color: Colors.white70),
+                ),
+                Text(
+                  userPhone,
+                  style: const TextStyle(color: Colors.white70),
                 ),
               ],
             ),
@@ -85,8 +143,10 @@ class _SendProfileScreenState extends State<SendProfileScreen> {
           IconButton(
             icon: const Icon(Icons.edit, color: Colors.white),
             onPressed: () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => const EditProfile()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const EditProfile())
+              ).then((_) => _loadUserData());
             },
           ),
         ],
@@ -111,30 +171,23 @@ class _SendProfileScreenState extends State<SendProfileScreen> {
           leading: Icon(icon, color: Colors.grey),
           title: Text(
             title,
-            style: GoogleFonts.lato(), // Apply font style here
+            style: GoogleFonts.lato(),
           ),
           trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-          onTap: () {
-            setState(() {
-              _selectedIndex = index;
-            });
-            switch (_selectedIndex) {
+          onTap: () async {
+            switch (index) {
               case 0:
+                // Handle payment method
                 break;
               case 1:
+                // Handle address
                 break;
               case 2:
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) =>
-                            const LoginScreen().animate().moveX()));
+                await _handleSignOut();
                 break;
             }
           },
         ),
-        // Optional: Uncomment if you want a divider
-        // if (index < 5) const Divider(height: 1),
       ],
     );
   }
@@ -182,26 +235,28 @@ class _SendProfileScreenState extends State<SendProfileScreen> {
         switch (_selectedIndex) {
           case 0:
             Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const HomesenderPage()
-                        .animate()
-                        .slideX(begin: -1, end: 0, curve: Curves.ease)));
+              context,
+              MaterialPageRoute(
+                builder: (context) => const HomesenderPage()
+                  .animate()
+                  .slideX(begin: -1, end: 0, curve: Curves.ease)
+              )
+            );
             break;
           case 1:
-            // Do nothing as it's the current screen
+            // Current screen - do nothing
             break;
           case 2:
             Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const MenusenderPage()));
-          break;
+              context,
+              MaterialPageRoute(builder: (context) => const MenusenderPage())
+            );
+            break;
           case 3:
             Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const SendProfileScreen()));
+              context,
+              MaterialPageRoute(builder: (context) => const SendProfileScreen())
+            );
             break;
         }
       },

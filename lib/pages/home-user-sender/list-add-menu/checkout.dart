@@ -41,9 +41,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
     for (var order in ordersToDelete) {
       final String deleteUrl =
           'https://back-deliverys.onrender.com/api/orders/${order.id}';
+      final String deleteOrder =
+          'http://10.210.60.215:8081/api/orders/del/${order.id}';
 
       try {
-        final response = await http.delete(Uri.parse(deleteUrl));
+        final response = await http.delete(Uri.parse(deleteOrder));
 
         if (response.statusCode == 200) {
           log('Order ${order.id} deleted successfully');
@@ -61,15 +63,24 @@ class _CheckoutPageState extends State<CheckoutPage> {
     List<Map<String, dynamic>> items = [];
     double totalAmount = 0;
     Map<String, dynamic> recipientData = {};
+    Map<String, dynamic> LocationData = {};
 
     for (var order in widget.cartOrders) {
       var recipient = order.recipient;
+      // var Location = order.Location;
 
       if (recipientData.isEmpty) {
         recipientData = {
           "name": recipient.name,
           "address": recipient.address,
           "phone": recipient.phone
+        };
+      }
+
+      if (LocationData.isEmpty) {
+        LocationData = {
+          "latitude": 15.9717, 
+          "longitude": 102.6217
         };
       }
 
@@ -90,7 +101,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
       'recipient': recipientData,
       'items': items,
       'totalAmount': totalAmount,
-      "sender": "66f3bb048dba2c35340f38e2",
+      "sender": "6717acc4bccc05d91fafb7bd",
+      "pickupLocation" : LocationData,
+      "deliveryLocation" : LocationData
     };
 
     try {
@@ -125,48 +138,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
         );
       }
     }
-  }
-
-  Widget _buildBottomButtons() {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: TextField(
-            controller: _imageController,
-            decoration: InputDecoration(
-              hintText: 'อัพโหลดรูปภาพ',
-              suffixIcon: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.camera_alt),
-                    onPressed: () => _pickImage(ImageSource.camera),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.photo),
-                    onPressed: () => _pickImage(ImageSource.gallery),
-                  ),
-                ],
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-        ),
-        if (_image != null)
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Image.file(
-              _image!,
-              height: 150,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
-          ),
-      ],
-    );
   }
 
   @override
@@ -220,7 +191,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       },
                     ),
                   ),
-                  _buildBottomButtons(),
                   Text(
                     'ราคารวม: \$${totalAmount.toStringAsFixed(2)}',
                     style: GoogleFonts.itim(
@@ -236,7 +206,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 32, vertical: 16),
                     ),
-                    child: Text('ยืนยันการชำระเงิน',
+                    child: Text('สร้างรายการ',
                         style: GoogleFonts.itim(fontSize: 18)),
                   ),
                 ],

@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class lunchfollowpage extends StatefulWidget {
-  const lunchfollowpage({super.key});
+  final Map<String, dynamic> order;
+
+  const lunchfollowpage({super.key, required this.order});
 
   @override
   State<lunchfollowpage> createState() => _lunchfollowpageState();
@@ -14,7 +16,6 @@ class _lunchfollowpageState extends State<lunchfollowpage> {
   late GoogleMapController mapController;
   bool isExpanded = false;
 
-  // กำหนดพิกัดเริ่มต้นของแผนที่
   CameraPosition initPosition = const CameraPosition(
     target: LatLng(16.246671218679253, 103.25207957788868),
     zoom: 17,
@@ -26,6 +27,8 @@ class _lunchfollowpageState extends State<lunchfollowpage> {
 
   @override
   Widget build(BuildContext context) {
+    final order = widget.order;
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -39,111 +42,166 @@ class _lunchfollowpageState extends State<lunchfollowpage> {
         backgroundColor: Colors.white,
         elevation: 0,
       ),
-      body: Column(
+      body: Stack(
+        // เปลี่ยนจาก Column เป็น Stack
         children: [
-          Expanded(
-            child: GoogleMap(
-              onMapCreated: _onMapCreated,
-              initialCameraPosition: initPosition, // ใช้ initPosition ที่กำหนดไว้
-            ),
+          // แผนที่จะแสดงเต็มหน้าจอ
+          GoogleMap(
+            onMapCreated: _onMapCreated,
+            initialCameraPosition: initPosition,
           ),
-          _buildOrderDetails(),
+          // ส่วนแสดงรายละเอียด Order จะอยู่ด้านล่างสุด
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: _buildOrderDetails(order),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildOrderDetails() {
+  Widget _buildOrderDetails(Map<String, dynamic> order) {
     return Container(
       padding: const EdgeInsets.all(16),
-      color: Colors.white,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
       child: Column(
+        mainAxisSize: MainAxisSize.min, // ให้ Column มีขนาดเท่ากับเนื้อหา
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GestureDetector(
+          // ส่วนอื่นๆ ของ _buildOrderDetails ยังคงเหมือนเดิม
+          InkWell(
             onTap: () {
               setState(() {
                 isExpanded = !isExpanded;
               });
             },
-            child: Row(
-              children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  color: Colors.grey[300],
-                ),
-                const SizedBox(width: 16),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Uttora Coffee House',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                      ),
-                      Text(
-                        'Ordered At 06 Sept, 10:00pm',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
-                ),
-                Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
-              ],
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Uttora Coffee House',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Ordered At 06 Sept, 10:00pm',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    isExpanded ? Icons.expand_less : Icons.expand_more,
+                    color: Colors.grey[600],
+                  ),
+                ],
+              ),
             ),
           ),
           if (isExpanded) ...[
-            const SizedBox(height: 16),
-            _buildExpandedDetails(),
+            const Divider(),
+            _buildExpandedDetails(order),
           ] else ...[
-            const SizedBox(height: 16),
-            const Text('2x Burger'),
-            const Text('4x Sandwich'),
+            const SizedBox(height: 8),
+            ...(order['items'] as List)
+                .map<Widget>((item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        '${item['quantity']}x ${item['name']}',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ))
+                .toList(),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildExpandedDetails() {
+  Widget _buildExpandedDetails(Map<String, dynamic> order) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Order Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        const SizedBox(height: 8),
-        _buildOrderItem('Burger', 2, 15.99),
-        _buildOrderItem('Sandwich', 4, 8.99),
-        const SizedBox(height: 16),
-        const Text('Delivery Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        const SizedBox(height: 8),
-        _buildDeliveryDetail('Address', '123 Main St, City, Country'),
-        _buildDeliveryDetail('Estimated Time', '30-45 minutes'),
-        const SizedBox(height: 16),
-        ElevatedButton(
-          onPressed: () {
-            // เพิ่มฟังก์ชันเมื่อกดปุ่ม
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.orange,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-          ),
-          child: const Text('Call Driver', style: TextStyle(color: Colors.white)),
+        const Text(
+          'Order Details',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
+        const SizedBox(height: 12),
+        // Convert items to List before using map
+        ...(order['items'] as List).map<Widget>(
+          (item) =>
+              _buildOrderItem(item['name'], item['quantity'], item['price']),
+        ),
+        const SizedBox(height: 20),
+        const Text(
+          'Delivery Details',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        const SizedBox(height: 12),
+        // Handle recipient as a single Map instead of a List
+        _buildDeliveryDetail('Name', order['recipient']['name']),
+        _buildDeliveryDetail('Phone', order['recipient']['phone']),
+        _buildDeliveryDetail('Address', order['recipient']['address']),
+        const SizedBox(height: 16),
       ],
     );
   }
 
-  Widget _buildOrderItem(String name, int quantity, double price) {
+  Widget _buildOrderItem(String name, int quantity, dynamic price) {
+    double priceAsDouble = price is int ? price.toDouble() : price;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('$quantity x $name'),
-          Text('\$${(quantity * price).toStringAsFixed(2)}'),
+          Text(
+            '$quantity x $name',
+            style: const TextStyle(fontSize: 14),
+          ),
+          Text(
+            '\$${(quantity * priceAsDouble).toStringAsFixed(2)}',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
         ],
       ),
     );
@@ -155,8 +213,22 @@ class _lunchfollowpageState extends State<lunchfollowpage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('$title: ', style: const TextStyle(fontWeight: FontWeight.bold)),
-          Expanded(child: Text(value)),
+          SizedBox(
+            width: 80,
+            child: Text(
+              '$title:',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 14),
+            ),
+          ),
         ],
       ),
     );

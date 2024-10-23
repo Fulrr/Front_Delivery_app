@@ -1,158 +1,99 @@
-// ignore_for_file: file_names
+// ignore_for_file: library_private_types_in_public_api
 
-import 'package:delivery_app/pages/home-user-sender/add-menu.dart';
-import 'package:delivery_app/pages/home-user-sender/home-sender.dart';
+import 'dart:io';
+import 'package:delivery_app/pages/home-rider/RealTimeMapPage.dart';
 import 'package:delivery_app/pages/home-user-sender/list-add-menu/Lunch-follow.dart';
-import 'package:delivery_app/pages/home-user-sender/list-add-menu/all-page.dart';
-import 'package:delivery_app/pages/home-user-sender/profile-sender.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:delivery_app/config/config.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LunchPage extends StatefulWidget {
-  const LunchPage({super.key});
+  final Map<String, dynamic> order;
+
+  const LunchPage({super.key, required this.order});
 
   @override
-  State<LunchPage> createState() => _LunchPageState();
+  _LunchPageState createState() => _LunchPageState();
 }
 
 class _LunchPageState extends State<LunchPage> {
-  int _selectedIndex = 0;
-  int _selectedTabIndex = 2;
+  String? Id; // สร้างตัวแปรเพื่อเก็บ riderId
+  File? _image;
+  final TextEditingController _imageController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _getRiderId(); // เรียกใช้เมื่อสร้าง LunchPage
+  }
+
+  void _getRiderId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      Id = prefs.getString('userId'); // ดึง riderId (userId ที่เก็บไว้)
+    });
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: source);
+
+    if (pickedFile != null) {
+      setState(() {
+        _image = File(pickedFile.path);
+        _imageController.text =
+            pickedFile.path.split('/').last; // แสดงชื่อไฟล์ในช่อง TextField
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final order = widget.order;
+
+    // ตรวจสอบว่า order ไม่เป็น null
+    if (order.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('รายละเอียดคำสั่งส่ง'),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
+        ),
+        body: Center(
+          child: const Text('ไม่พบข้อมูลคำสั่งส่ง'),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.black),
-          onPressed: () {},
-        ),
-        title: const Row(
-          children: [
-            Text(
-              'LOCATION',
-              style: TextStyle(color: Colors.orange, fontSize: 14),
-            ),
-            SizedBox(width: 8),
-            Text(
-              'Halal Lab office',
-              style: TextStyle(color: Colors.black, fontSize: 16),
-            ),
-            Icon(Icons.arrow_drop_down, color: Colors.black),
-          ],
-        ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 16),
-            child: const CircleAvatar(
-              backgroundColor: Colors.grey,
-              radius: 15,
-            ),
-          ),
-        ],
+        title: const Text('รายละเอียดคำสั่งส่ง'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
         elevation: 0,
       ),
-      body: Column(
-        children: [
-          _buildTabBar(),
-          Expanded(
-            child: ListView(
-              children: const [
-                OrderItem(name: 'Jussstin', dish: 'ListOders', id: '15253', price: 130),
-                OrderItem(name: 'Mailia', dish: 'ListOders', id: '21200', price: 325),
-                OrderItem(name: 'Korn', dish: 'ListOders', id: '53241', price: 245),
-              ],
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
-      floatingActionButton: _buildFloatingActionButton(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-    );
-  }
-
-  Widget _buildTabBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildTabItem('All', 0),
-          _buildTabItem('List Oders', 1),
-          _buildTabItem('Lunch', 2),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTabItem(String title, int index) {
-    bool isSelected = _selectedTabIndex == index;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedTabIndex = index;
-        });
-        switch (_selectedTabIndex) {
-          case 0:
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const allpage()));
-          break;
-          case 1:
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const ListOrdersPage()));
-          break;
-        }
-      },
-      child: Column(
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 16,
-              color: isSelected ? Colors.orange : Colors.black,
-            ),
-          ),
-          if (isSelected)
-            Container(
-              height: 2,
-              width: 70,
-              color: Colors.orange,
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.3),
-            spreadRadius: 1,
-            blurRadius: 5,
-            offset: const Offset(0, -3),
-          ),
-        ],
-      ),
-      child: BottomAppBar(
-        color: const Color(0xFFef2a38),
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8.0,
-        child: SizedBox(
-          height: 60,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <Widget>[
-              _buildNavItem(Icons.home, '', 0),
-              _buildNavItem(Icons.dehaze, '●', 1),
-              const SizedBox(width: 60), // Space for FAB
-              _buildNavItem(Icons.apps, '', 2),
-              _buildNavItem(Icons.person, '', 3),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildOrderInfo(order),
+              const SizedBox(height: 20),
+              _buildRecipientInfo(order),
+              const SizedBox(height: 20),
+              _buildItemsList(order),
+              const SizedBox(height: 20),
+              _buildTotalAmount(order),
+              const SizedBox(height: 30),
+              _buildBottomButtons(),
+              const SizedBox(height: 30),
+              _buildAcceptButton(context),
             ],
           ),
         ),
@@ -160,131 +101,238 @@ class _LunchPageState extends State<LunchPage> {
     );
   }
 
-  Widget _buildNavItem(IconData icon, String label, int index) {
-    return InkWell(
-      splashColor: Colors.transparent,
-      onTap: () {
-        setState(() {
-          _selectedIndex = index;
-        });
-        switch (_selectedIndex) {
-          case 0:
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const HomesenderPage()));
-          break;
-          case 3:
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const SendProfileScreen()));
-          break;
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: _selectedIndex == index ? Colors.white : Colors.white,
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              color: _selectedIndex == index ? Colors.white : Colors.white,
-              fontSize: 10,
+  Widget _buildOrderInfo(Map<String, dynamic> order) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'คำสั่งที่ ${order['_id']}',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFloatingActionButton() {
-    return Container(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.red,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.4),
-            spreadRadius: 3,
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: InkWell(
-        onTap: () {
-          // Action when tapped
-        },
-        child: const SizedBox(
-          width: 65,
-          height: 65,
-          child: Icon(Icons.add, size: 35, color: Colors.white),
+            const SizedBox(height: 8),
+            Text(
+              'สถานะ: ${_getStatusInThai(order['status'])}',
+              style: TextStyle(
+                color: _getStatusColor(order['status']),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'วันที่สั่ง: ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(order['createdAt']))}',
+              style: const TextStyle(color: Colors.grey),
+            ),
+          ],
         ),
       ),
     );
   }
-}
 
-class OrderItem extends StatelessWidget {
-  final String name;
-  final String dish;
-  final String id;
-  final int price;
-
-  const OrderItem({
-    Key? key,
-    required this.name,
-    required this.dish,
-    required this.id,
-    required this.price,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            color: Colors.grey[300],
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name, style: const TextStyle(color: Colors.orange)),
-                Text(dish, style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text('ID: $id', style: TextStyle(color: Colors.grey[600])),
-                Text('\$$price', style: const TextStyle(fontWeight: FontWeight.bold)),
-              ],
+  Widget _buildRecipientInfo(Map<String, dynamic> order) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'ข้อมูลผู้รับ',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const lunchfollowpage(),
-                        ),
-                      );
-                    },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-            ),
-            child: const Text('รายละเอียด', style: TextStyle(color: Colors.white)),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text('ชื่อ: ${order['recipient']['name']}'),
+            const SizedBox(height: 4),
+            Text('ที่อยู่: ${order['recipient']['address']}'),
+            const SizedBox(height: 4),
+            Text('เบอร์โทร: ${order['recipient']['phone']}'),
+          ],
+        ),
       ),
     );
+  }
+
+  // Widget _buildRaider(Map<String, dynamic> order) {
+  //   return Card(
+  //     elevation: 2,
+  //     child: Padding(
+  //       padding: const EdgeInsets.all(16.0),
+  //       child: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           const Text(
+  //             'ข้อมูลผู้รับ',
+  //             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  //           ),
+  //           const SizedBox(height: 8),
+  //           Text('ชื่อ: ${order['recipient']['name']}'),
+  //           const SizedBox(height: 4),
+  //           Text('ที่อยู่: ${order['recipient']['address']}'),
+  //           const SizedBox(height: 4),
+  //           Text('เบอร์โทร: ${order['recipient']['phone']}'),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
+
+  Widget _buildItemsList(Map<String, dynamic> order) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'รายการสินค้า',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            ...order['items'].map<Widget>((item) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(item['name'] ?? 'ไม่ระบุชื่อสินค้า'), // จัดการค่าที่เป็น null
+                    Text(
+                        '${item['quantity'] ?? 0} x ฿${(item['price'] ?? 0).toStringAsFixed(2)}'), // ป้องกันการเรียกใช้ toStringAsFixed บน null
+                  ],
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTotalAmount(Map<String, dynamic> order) {
+    return Card(
+      elevation: 2,
+      color: Colors.orange[50],
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'ยอดรวมทั้งสิ้น',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              '฿${(order['totalAmount'] ?? 0).toStringAsFixed(2)}', // ป้องกันการเรียกใช้ toStringAsFixed บน null
+              style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAcceptButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: () async {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => lunchfollowpage(order: widget.order))
+          );
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.orange,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+        ),
+        child: const Text(
+          'รายละเอียด',
+          style: TextStyle(fontSize: 18),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomButtons() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: TextField(
+            controller: _imageController,
+            decoration: InputDecoration(
+              hintText: 'อัพโหลดรูปภาพ',
+              suffixIcon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.camera_alt),
+                    onPressed: () => _pickImage(ImageSource.camera),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.photo),
+                    onPressed: () => _pickImage(ImageSource.gallery),
+                  ),
+                ],
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ),
+        if (_image != null)
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Image.file(
+              _image!,
+              height: 150,
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
+          ),
+      ],
+    );
+  }
+
+  String _getStatusInThai(String status) {
+    switch (status) {
+      case 'pending':
+        return 'รอดำเนินการ';
+      case 'processing':
+        return 'กำลังดำเนินการ';
+      case 'shipped':
+        return 'จัดส่งแล้ว';
+      case 'delivered':
+        return 'ส่งถึงผู้รับแล้ว';
+      case 'cancelled':
+        return 'ยกเลิกแล้ว';
+      default:
+        return status;
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'pending':
+        return Colors.orange;
+      case 'processing':
+        return Colors.blue;
+      case 'shipped':
+        return Colors.green;
+      case 'delivered':
+        return Colors.purple;
+      case 'cancelled':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
   }
 }

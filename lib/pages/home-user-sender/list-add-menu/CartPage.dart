@@ -62,7 +62,7 @@ class _CartPageState extends State<CartPage> {
       log('Error updating order: $e');
     }
   }
-
+  
   // ฟังก์ชันชำระเงิน
   Future<void> checkout() async {
     setState(() {

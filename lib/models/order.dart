@@ -15,6 +15,8 @@ class Order {
     int totalAmount;
     String status;
     List<dynamic> imageUrls;
+    Location pickupLocation;
+    Location deliveryLocation;
     dynamic rider;
     String id;
     String createdAt;
@@ -28,6 +30,8 @@ class Order {
         required this.totalAmount,
         required this.status,
         required this.imageUrls,
+        required this.pickupLocation,
+        required this.deliveryLocation,
         required this.rider,
         required this.id,
         required this.createdAt,
@@ -39,9 +43,11 @@ class Order {
         sender: json["sender"],
         recipient: Recipient.fromJson(json["recipient"]),
         items: List<Item>.from(json["items"].map((x) => Item.fromJson(x))),
-        totalAmount: json["totalAmount"],
+        totalAmount: (json["totalAmount"] as num).toInt(), // To handle both int and double
         status: json["status"],
         imageUrls: List<dynamic>.from(json["imageUrls"].map((x) => x)),
+        pickupLocation: Location.fromJson(json["pickupLocation"]),
+        deliveryLocation: Location.fromJson(json["deliveryLocation"]),
         rider: json["rider"],
         id: json["_id"],
         createdAt: json["createdAt"],
@@ -56,11 +62,33 @@ class Order {
         "totalAmount": totalAmount,
         "status": status,
         "imageUrls": List<dynamic>.from(imageUrls.map((x) => x)),
+        "pickupLocation": pickupLocation.toJson(),
+        "deliveryLocation": deliveryLocation.toJson(),
         "rider": rider,
         "_id": id,
         "createdAt": createdAt,
         "updatedAt": updatedAt,
         "__v": v,
+    };
+}
+
+class Location {
+    double latitude;
+    double longitude;
+
+    Location({
+        required this.latitude,
+        required this.longitude,
+    });
+
+    factory Location.fromJson(Map<String, dynamic> json) => Location(
+        latitude: json["latitude"]?.toDouble(),
+        longitude: json["longitude"]?.toDouble(),
+    );
+
+    Map<String, dynamic> toJson() => {
+        "latitude": latitude,
+        "longitude": longitude,
     };
 }
 
@@ -80,10 +108,11 @@ class Item {
     });
 
     factory Item.fromJson(Map<String, dynamic> json) => Item(
-        orders: json["orders"],
+        //orders: json["orders"],
         name: json["name"],
-        quantity: json["quantity"],
-        price: json["price"],
+        orders: (json["orders"] as num).toInt(), // To handle both int and double
+        quantity: (json["quantity"] as num).toInt(),
+        price: (json["price"] as num).toInt(),
         id: json["_id"],
     );
 
