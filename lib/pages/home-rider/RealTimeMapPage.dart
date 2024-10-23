@@ -463,6 +463,10 @@ class _RealTimeMapPageState extends State<RealTimeMapPage>
             onPositionChanged: (position, hasGesture) {
               if (hasGesture) setState(() => _isFollowingUser = false);
             },
+            // Enable interactiveFlags for zoom gestures
+            interactionOptions: InteractionOptions(
+              flags: InteractiveFlag.all,
+            ),
           ),
           children: [
             TileLayer(
@@ -471,7 +475,6 @@ class _RealTimeMapPageState extends State<RealTimeMapPage>
             ),
             MarkerLayer(
               markers: [
-                // แสดงตำแหน่งไรเดอร์ถ้ามีข้อมูล
                 if (_riderLocation != null)
                   Marker(
                     point: _riderLocation!,
@@ -480,7 +483,6 @@ class _RealTimeMapPageState extends State<RealTimeMapPage>
                     child: Icon(Icons.delivery_dining,
                         color: Colors.blue, size: 40),
                   ),
-                // จุดรับสินค้า
                 if (_pickupLocation != null && !_hasPickedUp)
                   Marker(
                     point: _pickupLocation!,
@@ -488,7 +490,6 @@ class _RealTimeMapPageState extends State<RealTimeMapPage>
                     height: 80,
                     child: Icon(Icons.store, color: Colors.green, size: 40),
                   ),
-                // จุดส่งสินค้า
                 if (_deliveryLocation != null && _hasPickedUp && !_isDelivered)
                   Marker(
                     point: _deliveryLocation!,
@@ -499,6 +500,40 @@ class _RealTimeMapPageState extends State<RealTimeMapPage>
               ],
             ),
           ],
+        ),
+        // Zoom controls
+        Positioned(
+          right: 16,
+          bottom: 180,
+          child: Column(
+            children: [
+              FloatingActionButton(
+                heroTag: "zoom_in",
+                mini: true,
+                onPressed: () {
+                  final currentZoom = _mapController.camera.zoom;
+                  _mapController.move(
+                    _mapController.camera.center,
+                    currentZoom + 1.0,
+                  );
+                },
+                child: Icon(Icons.add),
+              ),
+              SizedBox(height: 8),
+              FloatingActionButton(
+                heroTag: "zoom_out",
+                mini: true,
+                onPressed: () {
+                  final currentZoom = _mapController.camera.zoom;
+                  _mapController.move(
+                    _mapController.camera.center,
+                    currentZoom - 1.0,
+                  );
+                },
+                child: Icon(Icons.remove),
+              ),
+            ],
+          ),
         ),
         if (!_isFollowingUser) _buildRecenterButton(),
         _buildActionButtons(),
