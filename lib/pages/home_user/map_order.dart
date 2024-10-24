@@ -6,16 +6,16 @@ import 'package:location/location.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-class LunchFollowPage extends StatefulWidget {
+class mapOrder extends StatefulWidget {
   final Map<String, dynamic> order;
 
-  const LunchFollowPage({super.key, required this.order});
+  const mapOrder({super.key, required this.order});
 
   @override
-  State<LunchFollowPage> createState() => _LunchFollowPageState();
+  State<mapOrder> createState() => _mapOrderState();
 }
 
-class _LunchFollowPageState extends State<LunchFollowPage> with WidgetsBindingObserver {
+class _mapOrderState extends State<mapOrder> with WidgetsBindingObserver {
   final MapController _mapController = MapController();
   final Location _location = Location();
   StreamSubscription<LocationData>? _locationSubscription;
@@ -266,6 +266,19 @@ class _LunchFollowPageState extends State<LunchFollowPage> with WidgetsBindingOb
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // ปุ่มเพื่อแสดงตำแหน่งปัจจุบันของผู้ใช้
+        ElevatedButton(
+          onPressed: () {
+            if (_currentPosition != null) {
+              _mapController.move(_currentPosition, 16.0); // เปลี่ยนมุมมองไปที่ตำแหน่งปัจจุบันของผู้ใช้
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+          child: const Text('แสดงตำแหน่งของฉัน'),
+        ),
         // เนื้อหาอื่น ๆ ของ order details
         InkWell(
           onTap: () {

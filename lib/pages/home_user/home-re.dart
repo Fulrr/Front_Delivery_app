@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:delivery_app/models/food_model.dart';
 import 'package:delivery_app/pages/food-OR-setting/choose_food.dart';
+import 'package:delivery_app/pages/home_user/cartuser.dart';
 import 'package:delivery_app/pages/home_user/profile.dart';
 import 'package:delivery_app/services/food_service.dart';
 import 'package:delivery_app/services/user_service.dart';
@@ -573,7 +574,14 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
             );
             break;
           case 2:
-            // Navigate to cart screen
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const cartUser()
+                    .animate()
+                    .slideX(begin: 1, end: 0, curve: Curves.ease),
+              ),
+            );
             break;
           case 3:
             // Navigate to favorites screen

@@ -1,14 +1,17 @@
-import 'dart:convert';
 import 'package:delivery_app/pages/home-user-sender/home-sender.dart';
 import 'package:delivery_app/pages/home-user-sender/list-menu.dart';
 import 'package:delivery_app/pages/list-on-profile-users/edit_profile.dart';
+import 'package:delivery_app/pages/list-on-profile-users/histrory.dart';
+import 'package:delivery_app/pages/list-on-profile-users/my-addr.dart';
+import 'package:delivery_app/pages/list-on-profile-users/payment.dart';
+import 'package:delivery_app/pages/home_user/home-re.dart';
 import 'package:delivery_app/pages/login.dart';
+import 'package:delivery_app/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
-import 'package:delivery_app/config/config.dart';
 
 class SendProfileScreen extends StatefulWidget {
   const SendProfileScreen({super.key});
@@ -20,47 +23,18 @@ class SendProfileScreen extends StatefulWidget {
 class _SendProfileScreenState extends State<SendProfileScreen> {
   int _selectedIndex = 1;
   String userType = 'user';
+
+  // User data fields
   String userName = '';
   String userEmail = '';
   String userPhone = '';
-  String userImage = 'https://i.pinimg.com/564x/43/6b/47/436b47519f01232a329d90f75dbeb3f4.jpg';
+  String userImage = '';
+  String userAddress = '';
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
-  }
-
-  Future<void> _loadUserData() async {
-    try {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      String? token = prefs.getString('token');
-      String? userId = prefs.getString('userId');
-
-      if (token != null && userId != null) {
-        var response = await http.get(
-          Uri.parse('https://back-deliverys.onrender.com/api/users/$userId'),
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer $token"
-          },
-        );
-
-        if (response.statusCode == 200) {
-          var userData = jsonDecode(response.body);
-          setState(() {
-            userName = userData['name'] ?? 'User';
-            userEmail = userData['email'] ?? 'email@example.com';
-            userPhone = userData['phone'] ?? '';
-            userImage = userData['profileImage'] ?? userImage;
-          });
-        } else {
-          print('Failed to load user data');
-        }
-      }
-    } catch (e) {
-      print('Error loading user data: $e');
-    }
   }
 
   Future<void> _handleSignOut() async {
@@ -73,6 +47,33 @@ class _SendProfileScreenState extends State<SendProfileScreen> {
       );
     } catch (e) {
       print('Error signing out: $e');
+    }
+  }
+  
+  Future<void> _loadUserData() async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final String? userId = prefs.getString('userId');
+
+      if (userId != null) {
+        final userData = await UserService().getUserByIdd(userId);
+        setState(() {
+          userName = userData['name'] ?? 'User';
+          userEmail = userData['email'] ?? 'user@example.com';
+          userPhone = userData['phone'] ?? '';
+          userImage = userData['profileImage'] ??
+              'https://i.pinimg.com/564x/43/6b/47/436b47519f01232a329d90f75dbeb3f4.jpg';
+          userAddress = userData['address'] ?? '';
+        });
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading user data: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -114,7 +115,7 @@ class _SendProfileScreenState extends State<SendProfileScreen> {
         children: [
           CircleAvatar(
             radius: 30,
-            backgroundImage: NetworkImage(userImage),
+            backgroundImage: CachedNetworkImageProvider(userImage),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -126,35 +127,35 @@ class _SendProfileScreenState extends State<SendProfileScreen> {
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
-                    fontWeight: FontWeight.bold
+                    fontWeight: FontWeight.bold,
                   ),
-                ),
-                Text(
-                  userEmail,
-                  style: const TextStyle(color: Colors.white70),
                 ),
                 Text(
                   userPhone,
                   style: const TextStyle(color: Colors.white70),
                 ),
+                if (userAddress.isNotEmpty)
+                  Text(
+                    userAddress,
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
               ],
             ),
           ),
           IconButton(
             icon: const Icon(Icons.edit, color: Colors.white),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const EditProfile())
-              ).then((_) => _loadUserData());
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => const EditProfile()));
             },
           ),
         ],
       ),
     );
   }
-
-  Widget _buildProfileOptions() {
+Widget _buildProfileOptions() {
     return Column(
       children: [
         _buildOptionTile(Icons.payment, 'Payment Method', 0),
