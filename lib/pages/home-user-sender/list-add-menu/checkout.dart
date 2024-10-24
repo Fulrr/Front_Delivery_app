@@ -42,7 +42,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       final String deleteUrl =
           'https://back-deliverys.onrender.com/api/orders/${order.id}';
       final String deleteOrder =
-          'http://10.210.60.215:8081/api/orders/del/${order.id}';
+          'http://back-deliverys.onrender.com/api/orders/del/${order.id}';
 
       try {
         final response = await http.delete(Uri.parse(deleteOrder));
