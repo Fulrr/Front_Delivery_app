@@ -27,7 +27,6 @@ class _HomesenderPageState extends State<HomesenderPage> {
 
   final String url = 'https://back-deliverys.onrender.com/api/orders/';
 
-  
   @override
   void initState() {
     super.initState();
@@ -152,179 +151,236 @@ class _HomesenderPageState extends State<HomesenderPage> {
         ],
         elevation: 0,
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 16, right: 24),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Orders',
-                  style: GoogleFonts.itim(
-                      fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-                InkWell(
-                  onTap: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (context) {
-                        return CartPage(
-                          cartOrders: orders,
-                        );
-                      },
-                    );
-                  },
-                  child: Text(
-                    'Cart',
-                    style: GoogleFonts.itim(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: searchController,
-              decoration: InputDecoration(
-                hintText: 'Search by name or ID',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-              ),
-              onChanged: searchOrders,
-              style: GoogleFonts.itim(),
-            ),
-          ),
-          Center(
-            child: ElevatedButton(
-              onPressed: () {
-                searchOrders(searchController.text);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-              child: Text('ค้นหาผู้รับสินค้า',
-                  style: GoogleFonts.itim(fontSize: 14)),
-            ),
-          ),
-          const Center(
-            child: FractionallySizedBox(
-              widthFactor: 0.9,
-              child: Divider(color: Colors.black),
-            ),
-          ),
-          Expanded(
-            child: isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : ListView.builder(
-                    itemCount: filteredOrders.length,
-                    itemBuilder: (context, index) {
-                      final order = filteredOrders[index];
-                      // แก้ไขในส่วนของการแสดงรายการคำสั่งซื้อ
-return order.items.any((item) => item.orders == 1)
-    ? Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.3),
-              spreadRadius: 1,
-              blurRadius: 3,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
+      body: RefreshIndicator(
+        onRefresh: fetchOrders,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.only(left: 16, right: 24),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // แสดงภาพสินค้า
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: order.imageUrls.isNotEmpty
-                        ? Image.network(
-                            order.imageUrls[0], // ดึง URL รูปภาพแรก
-                            width: 60,
-                            height: 60,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Container(
-                              color: Colors.grey[300],
-                              child: const Icon(Icons.image_not_supported),
-                            ),
-                          )
-                        : Container(
-                            width: 60,
-                            height: 60,
-                            color: Colors.grey[300],
-                            child: const Icon(Icons.image_not_supported),
-                          ),
+                  Text(
+                    'Orders',
+                    style: GoogleFonts.itim(
+                        fontSize: 22, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // วนลูปเพื่อแสดงชื่อสินค้าแต่ละชิ้น
-                        for (var item in order.items.where((item) => item.orders == 1))
-                          Text(
-                            item.name,
-                            style: GoogleFonts.itim(
-                              color: Colors.orange,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        Text(
-                          order.recipient.name,
-                          style: GoogleFonts.itim(),
-                        ),
-                        Text(
-                          'Phone: ${order.recipient.phone}',
-                          style: GoogleFonts.itim(),
-                        ),
-                        Text(
-                          '\$${order.totalAmount.toStringAsFixed(2)}',
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.refresh),
+                        onPressed: fetchOrders,
+                        tooltip: 'Refresh Orders',
+                      ),
+                      InkWell(
+                        onTap: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (context) {
+                              return CartPage(
+                                cartOrders: orders,
+                              );
+                            },
+                          );
+                        },
+                        child: Text(
+                          'Cart',
                           style: GoogleFonts.itim(
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => addToCart(order),
-                    child: const Icon(Icons.add_shopping_cart),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                controller: searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search by name or ID',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                onChanged: searchOrders,
+                style: GoogleFonts.itim(),
+              ),
+            ),
+            Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  searchOrders(searchController.text);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                child: Text('ค้นหาผู้รับสินค้า',
+                    style: GoogleFonts.itim(fontSize: 14)),
+              ),
+            ),
+            const Center(
+              child: FractionallySizedBox(
+                widthFactor: 0.9,
+                child: Divider(color: Colors.black),
+              ),
+            ),
+            Expanded(
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : filteredOrders.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'ไม่พบรายการสินค้า',
+                                style: GoogleFonts.itim(fontSize: 18),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
+                                onPressed: fetchOrders,
+                                icon: const Icon(Icons.refresh),
+                                label: Text(
+                                  'รีเฟรช',
+                                  style: GoogleFonts.itim(),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: filteredOrders.length,
+                          itemBuilder: (context, index) {
+                            final order = filteredOrders[index];
+                            return order.items.any((item) => item.orders == 1)
+                                ? Container(
+                                    margin: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(8),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.grey.withOpacity(0.3),
+                                          spreadRadius: 1,
+                                          blurRadius: 3,
+                                          offset: const Offset(0, 1),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.all(12),
+                                          child: Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                child: order
+                                                        .imageUrls.isNotEmpty
+                                                    ? Image.network(
+                                                        order.imageUrls[0],
+                                                        width: 60,
+                                                        height: 60,
+                                                        fit: BoxFit.cover,
+                                                        errorBuilder: (context,
+                                                                error,
+                                                                stackTrace) =>
+                                                            Container(
+                                                          color:
+                                                              Colors.grey[300],
+                                                          child: const Icon(Icons
+                                                              .image_not_supported),
+                                                        ),
+                                                      )
+                                                    : Container(
+                                                        width: 60,
+                                                        height: 60,
+                                                        color: Colors.grey[300],
+                                                        child: const Icon(Icons
+                                                            .image_not_supported),
+                                                      ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    for (var item in order.items
+                                                        .where((item) =>
+                                                            item.orders == 1))
+                                                      Text(
+                                                        item.name,
+                                                        style: GoogleFonts.itim(
+                                                          color: Colors.orange,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    Text(
+                                                      order.recipient.name,
+                                                      style: GoogleFonts.itim(),
+                                                    ),
+                                                    Text(
+                                                      'Phone: ${order.recipient.phone}',
+                                                      style: GoogleFonts.itim(),
+                                                    ),
+                                                    Text(
+                                                      '\$${order.totalAmount.toStringAsFixed(2)}',
+                                                      style: GoogleFonts.itim(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              GestureDetector(
+                                                onTap: () => addToCart(order),
+                                                child: const Icon(
+                                                    Icons.add_shopping_cart),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : const SizedBox();
+                          },
+                        ),
+            ),
           ],
         ),
-      )
-    : const SizedBox(); // Do not display if no item has orders == 1
- // Do not display if no item has orders == 1
-                    },
-                  ),
-          ),
-        ],
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
       floatingActionButton: _buildFloatingActionButton(),

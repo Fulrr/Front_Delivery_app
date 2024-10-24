@@ -62,7 +62,7 @@ class _CartPageState extends State<CartPage> {
       log('Error updating order: $e');
     }
   }
-  
+
   // ฟังก์ชันชำระเงิน
   Future<void> checkout() async {
     setState(() {
@@ -148,8 +148,9 @@ class _CartPageState extends State<CartPage> {
                         title: Text(order.items[0].name,
                             style: GoogleFonts.itim()),
                         subtitle: Text(
-                            '\$${order.items[0].price.toStringAsFixed(2)}',
-                            style: GoogleFonts.itim()),
+                          '\$${order.items[0].price.toStringAsFixed(2)}',
+                          style: GoogleFonts.itim(),
+                        ),
                         trailing: IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
                           onPressed: () {
@@ -166,8 +167,9 @@ class _CartPageState extends State<CartPage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) =>
-                        CheckoutPage(cartOrders: widget.cartOrders)),
+                  builder: (context) =>
+                      CheckoutPage(cartOrders: widget.cartOrders),
+                ),
               ); // ไปที่หน้า CheckoutPage
             },
             backgroundColor: Colors.green,

@@ -68,7 +68,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
     for (var order in widget.cartOrders) {
       var recipient = order.recipient;
-      // var Location = order.Location;
 
       if (recipientData.isEmpty) {
         recipientData = {
@@ -80,14 +79,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
       if (LocationData.isEmpty) {
         LocationData = {
-          "latitude": 16.2466083, 
+          "latitude": 16.2466083,
           "longitude": 103.252,
         };
       }
 
       if (LocationData1.isEmpty) {
         LocationData1 = {
-          "latitude": 16.2466283, 
+          "latitude": 16.2466283,
           "longitude": 103.252185,
         };
       }
@@ -100,7 +99,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
             'quantity': item.quantity,
             'price': item.price,
           });
-          totalAmount += item.price * item.quantity;
+          double itemTotalPrice = (item.price * item.quantity).toDouble();
+          totalAmount += itemTotalPrice; // คำนวณราคาทั้งหมด
         }
       }
     }
@@ -110,8 +110,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
       'items': items,
       'totalAmount': totalAmount,
       "sender": "6717acc4bccc05d91fafb7bd",
-      "pickupLocation" : LocationData,
-      "deliveryLocation" : LocationData1
+      "pickupLocation": LocationData,
+      "deliveryLocation": LocationData1
     };
 
     try {
@@ -159,7 +159,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
     for (var order in filteredOrders) {
       for (var item in order.items) {
         if (item.orders == 0) {
-          totalAmount += item.price * item.quantity;
+          double itemTotalPrice = (item.price * item.quantity).toDouble();
+          totalAmount += itemTotalPrice; // คำนวณราคารวม
         }
       }
     }

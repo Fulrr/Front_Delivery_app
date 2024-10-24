@@ -27,8 +27,10 @@ class _SignUpRiderState extends State<SignUpRider> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _addressController = TextEditingController();
-  final _latitudeController = TextEditingController(text: '13.736717');  // Default value
-  final _longitudeController = TextEditingController(text: '100.523186'); // Default value
+  final _latitudeController =
+      TextEditingController(text: '13.736717'); // Default value
+  final _longitudeController =
+      TextEditingController(text: '100.523186'); // Default value
   final _vehicleNumberController = TextEditingController();
 
   bool _isNameValid = false;
@@ -36,7 +38,7 @@ class _SignUpRiderState extends State<SignUpRider> {
   bool _isAddressValid = false;
   bool _isVehicleNumberValid = false;
 
-void _showErrorDialog(String message) {
+  void _showErrorDialog(String message) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -71,7 +73,7 @@ void _showErrorDialog(String message) {
       });
     }
   }
-  
+
   Future<void> _registerUser() async {
     setState(() {
       _isLoading = true;
@@ -119,7 +121,7 @@ void _showErrorDialog(String message) {
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         if (!mounted) return;
-        
+
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -134,7 +136,8 @@ void _showErrorDialog(String message) {
                     Navigator.of(context).pop();
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      MaterialPageRoute(
+                          builder: (context) => const LoginScreen()),
                     );
                   },
                 ),
@@ -144,7 +147,8 @@ void _showErrorDialog(String message) {
         );
       } else {
         if (!mounted) return;
-        _showErrorDialog(decodedResponse['message'] ?? 'การลงทะเบียนล้มเหลว กรุณาลองใหม่อีกครั้ง');
+        _showErrorDialog(decodedResponse['message'] ??
+            'การลงทะเบียนล้มเหลว กรุณาลองใหม่อีกครั้ง');
       }
     } catch (e) {
       if (!mounted) return;
@@ -307,7 +311,8 @@ void _showErrorDialog(String message) {
                         ),
                         onPressed: () {
                           setState(() {
-                            _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                            _isConfirmPasswordVisible =
+                                !_isConfirmPasswordVisible;
                           });
                         },
                       ),

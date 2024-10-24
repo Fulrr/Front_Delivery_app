@@ -1,4 +1,4 @@
-final url = 'https://back-deliverys.onrender.com/api';
+final url = 'http://192.168.0.200:8081/api';
 
 //log&reg
 final registerion = url + "/users/registration";
