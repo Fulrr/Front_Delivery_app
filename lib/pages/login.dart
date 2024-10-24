@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:delivery_app/config/config.dart';
 import 'package:delivery_app/pages/home-rider/home-rider.dart';
 import 'package:delivery_app/pages/home-user-sender/home-sender.dart';
 import 'package:delivery_app/pages/home_user/home-re.dart';
@@ -7,9 +8,40 @@ import 'package:delivery_app/pages/register.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:developer' as dev;
-import 'package:delivery_app/config/config.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+// Constants
+class AuthConstants {
+  static const String userIdKey = 'userId';
+  static const String tokenKey = 'token';
+  static const String userTypeKey = 'userType';
+}
+
+// Authentication service
+class AuthService {
+  final String loginUrl;
+  
+  AuthService({required this.loginUrl});
+
+  Future<Map<String, dynamic>> login(String phone, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse(loginUrl),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "phone": phone,
+          "password": password,
+        }),
+      );
+
+      return jsonDecode(response.body);
+    } catch (e) {
+      dev.log('Login error: $e');
+      throw Exception('Failed to login');
+    }
+  }
+}
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -18,102 +50,104 @@ class LoginScreen extends StatefulWidget {
   _LoginScreenState createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen>
-    with SingleTickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   late SharedPreferences prefs;
-  String errorMessage = '';
-  late AnimationController _animationController;
-  late Animation<double> _animation;
-
+  bool _isLoading = false;
+  bool _isPasswordVisible = false;
+  late final AuthService _authService;
+  
   @override
   void initState() {
     super.initState();
-    initSharedPref();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _animation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    );
+    _authService = AuthService(loginUrl: login); // Replace 'login' with your URL
+    _initSharedPreferences();
+  }
+
+  Future<void> _initSharedPreferences() async {
+    prefs = await SharedPreferences.getInstance();
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
-  void initSharedPref() async {
-    prefs = await SharedPreferences.getInstance();
+  String? _validatePhone(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'กรุณากรอกหมายเลขโทรศัพท์';
+    }
+    // Add more phone validation if needed
+    return null;
   }
 
-  void loginUser() async {
-    if (_formKey.currentState!.validate()) {
-      var reqBody = {
-        "phone": _phoneController.text,
-        "password": _passwordController.text,
-      };
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'กรุณากรอกรหัสผ่าน';
+    }
+    // Add more password validation if needed
+    return null;
+  }
 
-      try {
-        // ตรวจสอบ URL ให้ถูกต้อง
-        var response = await http.post(
-          Uri.parse(login), // ตรวจสอบให้แน่ใจว่า URL ถูกต้อง
-          headers: {"Content-Type": "application/json"},
-          body: jsonEncode(reqBody),
-        );
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
 
-        // ตรวจสอบ response status code
-        dev.log('Status code: ${response.statusCode}');
-        dev.log('Response body: ${response.body}');
+    setState(() => _isLoading = true);
 
-        var jsonResponse = jsonDecode(response.body);
+    try {
+      final response = await _authService.login(
+        _phoneController.text,
+        _passwordController.text,
+      );
 
-        if (response.statusCode == 200 && jsonResponse['status']) {
-          var myToken = jsonResponse['token'];
-          var userType = jsonResponse['userType'];
-
-          // Decode token เพื่อดึง userId
-          var decodedToken = JwtDecoder.decode(myToken);
-          var userId = decodedToken[
-              '_id']; // หรือใช้ 'userId' ตามที่คุณตั้งชื่อใน payload
-
-          // เก็บ userId ใน SharedPreferences
-          prefs.setString('userId', userId);
-          prefs.setString('token', myToken);
-          prefs.setString('userType', userType);
-
-          // ตรวจสอบ userType แล้วไปยังหน้าที่ถูกต้อง
-          if (userType == 'user') {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const FoodHomeScreen()),
-            );
-          } else if (userType == 'rider') {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const HomeRiderPage()),
-            );
-          } else if (userType == 'send') {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const HomesenderPage()),
-            );
-          }
-        } else {
-          _showErrorSnackBar("Login failed. Please check your credentials.");
-          dev.log(
-              'Login failed: ${jsonResponse['message'] ?? "Unknown error"}');
-        }
-      } catch (e) {
-        _showErrorSnackBar("An error occurred. Please try again later.");
-        dev.log('Error during login: $e');
+      if (response['status']) {
+        await _handleSuccessfulLogin(response);
+      } else {
+        _showErrorMessage("Login failed. Please check your credentials.");
       }
+    } catch (e) {
+      _showErrorMessage("An error occurred. Please try again later.");
+      dev.log('Login error: $e');
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
-  void _showErrorSnackBar(String message) {
+  Future<void> _handleSuccessfulLogin(Map<String, dynamic> response) async {
+    final token = response['token'];
+    final userType = response['userType'];
+    final decodedToken = JwtDecoder.decode(token);
+    final userId = decodedToken['_id'];
+
+    await Future.wait([
+      prefs.setString(AuthConstants.userIdKey, userId),
+      prefs.setString(AuthConstants.tokenKey, token),
+      prefs.setString(AuthConstants.userTypeKey, userType),
+    ]);
+
+    _navigateToHomeScreen(userType);
+  }
+
+  void _navigateToHomeScreen(String userType) {
+    final routes = {
+      'user': const FoodHomeScreen(),
+      'rider': const HomeRiderPage(),
+      'send': const HomesenderPage(),
+    };
+
+    final widget = routes[userType];
+    if (widget != null) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => widget),
+      );
+    }
+  }
+
+  void _showErrorMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -124,7 +158,6 @@ class _LoginScreenState extends State<LoginScreen>
           ],
         ),
         backgroundColor: Colors.red,
-        duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10.0),
@@ -133,182 +166,143 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  void _showExitDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Exit App'),
-        content: const Text('Do you want to exit the app?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('No'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Yes'),
-          ),
-        ],
-      ),
-    ).then((value) {
-      if (value == true) {
-        // Use SystemNavigator.pop() to close the app
-        // SystemNavigator.pop();
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        _showExitDialog(context);
-        return false; // Prevents closing the screen by pressing back
-      },
-      child: Scaffold(
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 40),
-                  const Text(
-                    'Sign In',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 40),
-                  TextFormField(
-                    controller: _phoneController,
-                    decoration: const InputDecoration(
-                      labelText: 'Phone number',
-                      prefixText: '+66 ',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.phone,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'กรุณากรอกหมายเลขโทรศัพท์';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passwordController,
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                      border: OutlineInputBorder(),
-                      suffixIcon: Icon(Icons.visibility_off),
-                    ),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'กรุณากรอกรหัสผ่าน';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: loginUser,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      minimumSize: const Size(double.infinity, 50),
-                    ),
-                    child: const Text('SIGN IN'),
-                  ),
-                  const SizedBox(height: 16),
-                  const Spacer(),
-                  Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Column(
-                          children: [
-                            Column(
-                              children: [
-                                Row(
-                                  children: [
-                                    const Text("Don't have an UserAccount? "),
-                                    GestureDetector(
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  SignUpScreen()),
-                                        );
-                                      },
-                                      child: const Text(
-                                        "Sign up",
-                                        style: TextStyle(
-                                          color: Colors.red,
-                                          decoration: TextDecoration.underline,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            Column(
-                              children: [
-                                Row(
-                                  children: [
-                                    const Text("Don't have an RiderAccount? "),
-                                    GestureDetector(
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) =>
-                                                  SignUpRider()),
-                                        );
-                                      },
-                                      child: const Text(
-                                        "Sign up",
-                                        style: TextStyle(
-                                          color: Colors.red,
-                                          decoration: TextDecoration.underline,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.facebook),
-                        onPressed: () {},
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.alternate_email),
-                        onPressed: () {},
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.g_mobiledata),
-                        onPressed: () {},
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+    return Scaffold(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 40),
+                const Text(
+                  'Sign In',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 40),
+                _buildPhoneField(),
+                const SizedBox(height: 16),
+                _buildPasswordField(),
+                const SizedBox(height: 24),
+                _buildLoginButton(),
+                const Divider(height: 48),
+                _buildSignUpOptions(),
+                _buildSocialLoginButtons(),
+              ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildPhoneField() {
+    return TextFormField(
+      controller: _phoneController,
+      decoration: const InputDecoration(
+        labelText: 'Phone number',
+        prefixText: '+66 ',
+        border: OutlineInputBorder(),
+      ),
+      keyboardType: TextInputType.phone,
+      validator: _validatePhone,
+    );
+  }
+
+  Widget _buildPasswordField() {
+    return TextFormField(
+      controller: _passwordController,
+      decoration: InputDecoration(
+        labelText: 'Password',
+        border: const OutlineInputBorder(),
+        suffixIcon: IconButton(
+          icon: Icon(
+            _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+          ),
+          onPressed: () {
+            setState(() => _isPasswordVisible = !_isPasswordVisible);
+          },
+        ),
+      ),
+      obscureText: !_isPasswordVisible,
+      validator: _validatePassword,
+    );
+  }
+
+  Widget _buildLoginButton() {
+    return ElevatedButton(
+      onPressed: _isLoading ? null : _handleLogin,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.red,
+        minimumSize: const Size(double.infinity, 50),
+      ),
+      child: _isLoading
+          ? const CircularProgressIndicator(color: Colors.white)
+          : const Text('SIGN IN'),
+    );
+  }
+
+  Widget _buildSignUpOptions() {
+    return Column(
+      children: [
+        _buildSignUpOption(
+          text: "Don't have an UserAccount? ",
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => SignUpScreen()),
+          ),
+        ),
+        const SizedBox(height: 8),
+        _buildSignUpOption(
+          text: "Don't have an RiderAccount? ",
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => SignUpRider()),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSignUpOption({required String text, required VoidCallback onTap}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(text),
+        GestureDetector(
+          onTap: onTap,
+          child: const Text(
+            "Sign up",
+            style: TextStyle(
+              color: Colors.red,
+              decoration: TextDecoration.underline,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSocialLoginButtons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.facebook),
+          onPressed: () {},
+        ),
+        IconButton(
+          icon: const Icon(Icons.alternate_email),
+          onPressed: () {},
+        ),
+        IconButton(
+          icon: const Icon(Icons.g_mobiledata),
+          onPressed: () {},
+        ),
+      ],
     );
   }
 }

@@ -3,16 +3,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-class lunchfollowpage extends StatefulWidget {
+class LunchFollowPage extends StatefulWidget {
   final Map<String, dynamic> order;
 
-  const lunchfollowpage({super.key, required this.order});
+  const LunchFollowPage({super.key, required this.order});
 
   @override
-  State<lunchfollowpage> createState() => _lunchfollowpageState();
+  State<LunchFollowPage> createState() => _LunchFollowPageState();
 }
 
-class _lunchfollowpageState extends State<lunchfollowpage> {
+class _LunchFollowPageState extends State<LunchFollowPage> {
   late GoogleMapController mapController;
   bool isExpanded = false;
 
@@ -43,12 +43,12 @@ class _lunchfollowpageState extends State<lunchfollowpage> {
         elevation: 0,
       ),
       body: Stack(
-        // เปลี่ยนจาก Column เป็น Stack
         children: [
           // แผนที่จะแสดงเต็มหน้าจอ
           GoogleMap(
             onMapCreated: _onMapCreated,
             initialCameraPosition: initPosition,
+            markers: _createMarker(order),
           ),
           // ส่วนแสดงรายละเอียด Order จะอยู่ด้านล่างสุด
           Positioned(
@@ -60,6 +60,18 @@ class _lunchfollowpageState extends State<lunchfollowpage> {
         ],
       ),
     );
+  }
+
+  Set<Marker> _createMarker(Map<String, dynamic> order) {
+    return {
+      Marker(
+        markerId: const MarkerId('restaurant'),
+        position: LatLng(16.246671218679253, 103.25207957788868), // ตำแหน่งของร้าน
+        infoWindow: InfoWindow(
+          title: 'Uttora Coffee House',
+        ),
+      ),
+    };
   }
 
   Widget _buildOrderDetails(Map<String, dynamic> order) {
@@ -81,10 +93,9 @@ class _lunchfollowpageState extends State<lunchfollowpage> {
         ],
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min, // ให้ Column มีขนาดเท่ากับเนื้อหา
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ส่วนอื่นๆ ของ _buildOrderDetails ยังคงเหมือนเดิม
           InkWell(
             onTap: () {
               setState(() {
@@ -163,10 +174,8 @@ class _lunchfollowpageState extends State<lunchfollowpage> {
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         const SizedBox(height: 12),
-        // Convert items to List before using map
         ...(order['items'] as List).map<Widget>(
-          (item) =>
-              _buildOrderItem(item['name'], item['quantity'], item['price']),
+          (item) => _buildOrderItem(item['name'], item['quantity'], item['price']),
         ),
         const SizedBox(height: 20),
         const Text(
@@ -174,7 +183,6 @@ class _lunchfollowpageState extends State<lunchfollowpage> {
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         const SizedBox(height: 12),
-        // Handle recipient as a single Map instead of a List
         _buildDeliveryDetail('Name', order['recipient']['name']),
         _buildDeliveryDetail('Phone', order['recipient']['phone']),
         _buildDeliveryDetail('Address', order['recipient']['address']),

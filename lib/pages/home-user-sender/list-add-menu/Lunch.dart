@@ -243,11 +243,12 @@ class _LunchPageState extends State<LunchPage> {
       width: double.infinity,
       child: ElevatedButton(
         onPressed: () async {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => lunchfollowpage(order: widget.order))
-          );
-        },
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => LunchFollowPage(order: widget.order))
+  );
+},
+
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.orange,
           padding: const EdgeInsets.symmetric(vertical: 16),
