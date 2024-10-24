@@ -5,8 +5,16 @@ import 'package:delivery_app/models/food_model.dart'; // นำเข้าโ�
 class PaymentPage extends StatefulWidget {
   final Food food;
   final int quantity;
+  final String recipientPhone;
+  final String recipientAddress;
 
-  const PaymentPage({super.key, required this.food, required this.quantity});
+  const PaymentPage({
+    super.key,
+    required this.food,
+    required this.quantity,
+    required this.recipientPhone,
+    required this.recipientAddress,
+  });
 
   @override
   _PaymentPageState createState() => _PaymentPageState();
@@ -126,7 +134,7 @@ class _PaymentPageState extends State<PaymentPage> {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                '123 Main Street, New York, NY 10001',
+                widget.recipientAddress, // แสดงที่อยู่ที่รับมา
                 style: GoogleFonts.lato(color: Colors.grey[600]),
               ),
             ),
@@ -138,7 +146,7 @@ class _PaymentPageState extends State<PaymentPage> {
             const Icon(Icons.phone, color: Colors.black),
             const SizedBox(width: 8),
             Text(
-              '+1 234 567 8901',
+              widget.recipientPhone, // แสดงเบอร์โทรที่รับมา
               style: GoogleFonts.lato(color: Colors.grey[600]),
             ),
           ],

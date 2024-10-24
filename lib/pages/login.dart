@@ -60,14 +60,23 @@ class _LoginScreenState extends State<LoginScreen>
       };
 
       try {
-        var response = await http.post(Uri.parse(login),
-            headers: {"Content-Type": "application/json"},
-            body: jsonEncode(reqBody));
+        // ตรวจสอบ URL ให้ถูกต้อง
+        var response = await http.post(
+          Uri.parse(login), // ตรวจสอบให้แน่ใจว่า URL ถูกต้อง
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode(reqBody),
+        );
+
+        // ตรวจสอบ response status code
+        dev.log('Status code: ${response.statusCode}');
+        dev.log('Response body: ${response.body}');
 
         var jsonResponse = jsonDecode(response.body);
-        if (jsonResponse['status']) {
+
+        if (response.statusCode == 200 && jsonResponse['status']) {
           var myToken = jsonResponse['token'];
           var userType = jsonResponse['userType'];
+
           // Decode token เพื่อดึง userId
           var decodedToken = JwtDecoder.decode(myToken);
           var userId = decodedToken[
@@ -77,6 +86,8 @@ class _LoginScreenState extends State<LoginScreen>
           prefs.setString('userId', userId);
           prefs.setString('token', myToken);
           prefs.setString('userType', userType);
+
+          // ตรวจสอบ userType แล้วไปยังหน้าที่ถูกต้อง
           if (userType == 'user') {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (context) => const FoodHomeScreen()),

@@ -1,12 +1,14 @@
-import 'dart:convert'; // นำเข้า jsonEncode
+import 'dart:convert';
 import 'package:delivery_app/models/food_model.dart';
 import 'package:delivery_app/pages/food-OR-setting/pay-food.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http; // นำเข้า HTTP package
+import 'package:http/http.dart' as http;
+import 'package:delivery_app/config/config.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FoodOrderComponent extends StatefulWidget {
-  final Food selectedFood; // เพิ่มการรับ selectedFood
+  final Food selectedFood;
 
   const FoodOrderComponent({super.key, required this.selectedFood});
 
@@ -17,21 +19,93 @@ class FoodOrderComponent extends StatefulWidget {
 class _FoodOrderComponentState extends State<FoodOrderComponent> {
   int quantity = 1;
   bool isLoading = false;
-  String? message; // ตัวแปรสำหรับเก็บข้อความแจ้งเตือน
+  String? message;
+  String? userId;
+  Map<String, dynamic>? userData;
 
-  // ฟังก์ชันเรียก API สร้างคำสั่งซื้อ
+  @override
+  void initState() {
+    super.initState();
+    _getUserData();
+  }
+
+  // ฟังก์ชันดึง userId และข้อมูลผู้ใช้
+  Future<void> _getUserData() async {
+    try {
+      // ดึง userId จาก SharedPreferences
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? storedUserId = prefs.getString('userId');
+
+      if (storedUserId != null) {
+        // เรียก API เพื่อดึงข้อมูลผู้ใช้
+        final response = await http.get(
+          Uri.parse('${getUserById}/$storedUserId'),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        );
+
+        if (response.statusCode == 200) {
+          final responseData = jsonDecode(response.body);
+          if (responseData['status'] == true) {
+            setState(() {
+              userId = storedUserId;
+              userData = responseData['data'];
+            });
+          } else {
+            setState(() {
+              message = 'ไม่สามารถดึงข้อมูลผู้ใช้ได้';
+            });
+          }
+        } else {
+          setState(() {
+            message = 'เกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้';
+          });
+        }
+      } else {
+        setState(() {
+          message = 'ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        message = 'เกิดข้อผิดพลาด: $e';
+      });
+    }
+  }
+
+  // ฟังก์ชันสร้างคำสั่งซื้อ
   Future<void> createOrder() async {
+    if (userId == null || userData == null) {
+      setState(() {
+        message = 'กรุณาเข้าสู่ระบบก่อนสั่งอาหาร';
+      });
+      return;
+    }
+
+    // ตรวจสอบข้อมูล GPS
+    final userGpsLocation = userData!['gpsLocation'];
+    if (userGpsLocation == null ||
+        userGpsLocation['latitude'] == null ||
+        userGpsLocation['longitude'] == null) {
+      setState(() {
+        message =
+            'ไม่พบข้อมูลตำแหน่ง GPS กรุณาอัปเดตตำแหน่งของคุณก่อนสั่งอาหาร';
+      });
+      return;
+    }
+
     setState(() {
       isLoading = true;
-      message = null; // ล้างข้อความก่อน
+      message = null;
     });
 
     final orderData = {
-      "sender": "66f3bb048dba2c35340f38e2", // กำหนด userId ของผู้ส่ง
+      "sender": userId,
       "recipient": {
-        "name": "John Doe", // กำหนดข้อมูลผู้รับ
-        "address": "123 Main St",
-        "phone": "555-5555"
+        "name": userData!['name'] ?? '',
+        "address": userData!['address'] ?? '',
+        "phone": userData!['phone'] ?? '',
       },
       "items": [
         {
@@ -41,20 +115,16 @@ class _FoodOrderComponentState extends State<FoodOrderComponent> {
         }
       ],
       "totalAmount": widget.selectedFood.price * quantity,
-      "pickupLocation": {
-        "latitude": 37.7749, // ใส่ค่าพิกัดสถานที่รับ
-        "longitude": -122.4194
-      },
+      "pickupLocation": {"latitude": 15.9717, "longitude": 102.6217},
       "deliveryLocation": {
-        "latitude": 37.7849, // ใส่ค่าพิกัดสถานที่ส่ง
-        "longitude": -122.4094
+        "latitude": userGpsLocation['latitude'],
+        "longitude": userGpsLocation['longitude']
       }
     };
 
     try {
       final response = await http.post(
-        Uri.parse(
-            'http://192.168.0.145:8081/api/orders'), // เส้นทาง API ที่คุณต้องการเรียก
+        Uri.parse(cre_Order),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -62,8 +132,6 @@ class _FoodOrderComponentState extends State<FoodOrderComponent> {
       );
 
       if (response.statusCode == 201) {
-        // สร้างคำสั่งซื้อสำเร็จ
-        print('Order created successfully!');
         setState(() {
           message = 'คำสั่งซื้อสร้างสำเร็จ!';
         });
@@ -73,18 +141,17 @@ class _FoodOrderComponentState extends State<FoodOrderComponent> {
             builder: (context) => PaymentPage(
               food: widget.selectedFood,
               quantity: quantity,
+              recipientPhone: userData!['phone'] ?? '', // ส่งเบอร์โทรไป
+              recipientAddress: userData!['address'] ?? '', // ส่งที่อยู่ไป
             ),
           ),
         );
       } else {
-        // หากล้มเหลว
-        print('Failed to create order: ${response.body}');
         setState(() {
           message = 'ไม่สามารถสร้างคำสั่งซื้อได้: ${response.body}';
         });
       }
     } catch (e) {
-      print('Error: $e');
       setState(() {
         message = 'เกิดข้อผิดพลาด: $e';
       });
