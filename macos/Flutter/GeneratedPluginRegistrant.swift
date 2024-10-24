@@ -12,7 +12,7 @@ import geolocator_apple
 import location
 import path_provider_foundation
 import shared_preferences_foundation
-import sqflite_darwin
+import sqflite
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   FLTFirebaseFirestorePlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseFirestorePlugin"))
