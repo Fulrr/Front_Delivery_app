@@ -114,8 +114,9 @@ class _FoodOrderComponentState extends State<FoodOrderComponent> {
           "price": widget.selectedFood.price,
         }
       ],
+      "imageUrls": [widget.selectedFood.imageUrl],
       "totalAmount": widget.selectedFood.price * quantity,
-      "pickupLocation": {"latitude": 15.9717, "longitude": 102.6217},
+      "pickupLocation": {"latitude": 16.246618, "longitude": 103.252012},
       "deliveryLocation": {
         "latitude": userGpsLocation['latitude'],
         "longitude": userGpsLocation['longitude']
@@ -141,8 +142,8 @@ class _FoodOrderComponentState extends State<FoodOrderComponent> {
             builder: (context) => PaymentPage(
               food: widget.selectedFood,
               quantity: quantity,
-              recipientPhone: userData!['phone'] ?? '', // ส่งเบอร์โทรไป
-              recipientAddress: userData!['address'] ?? '', // ส่งที่อยู่ไป
+              recipientPhone: userData!['phone'] ?? '',
+              recipientAddress: userData!['address'] ?? '',
             ),
           ),
         );
