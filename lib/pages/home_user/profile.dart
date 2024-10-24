@@ -5,21 +5,63 @@ import 'package:delivery_app/pages/list-on-profile-users/my-addr.dart';
 import 'package:delivery_app/pages/list-on-profile-users/payment.dart';
 import 'package:delivery_app/pages/home_user/home-re.dart';
 import 'package:delivery_app/pages/login.dart';
+import 'package:delivery_app/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FoodProfileScreen extends StatefulWidget {
   const FoodProfileScreen({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _FoodProfileScreenState createState() => _FoodProfileScreenState();
 }
 
 class _FoodProfileScreenState extends State<FoodProfileScreen> {
-  int _selectedIndex = 1; // Set to 1 for Profile tab
+  int _selectedIndex = 1;
   String userType = 'user';
+
+  // User data fields
+  String userName = '';
+  String userEmail = '';
+  String userPhone = '';
+  String userImage = '';
+  String userAddress = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final String? userId = prefs.getString('userId');
+
+      if (userId != null) {
+        final userData = await UserService().getUserByIdd(userId);
+        setState(() {
+          userName = userData['name'] ?? 'User';
+          userEmail = userData['email'] ?? 'user@example.com';
+          userPhone = userData['phone'] ?? '';
+          userImage = userData['profileImage'] ??
+              'https://i.pinimg.com/564x/43/6b/47/436b47519f01232a329d90f75dbeb3f4.jpg';
+          userAddress = userData['address'] ?? '';
+        });
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading user data: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,27 +99,34 @@ class _FoodProfileScreenState extends State<FoodProfileScreen> {
       color: const Color(0xFFef2a38),
       child: Row(
         children: [
-          const CircleAvatar(
+          CircleAvatar(
             radius: 30,
-            backgroundImage: NetworkImage(
-                'https://i.pinimg.com/564x/43/6b/47/436b47519f01232a329d90f75dbeb3f4.jpg'),
+            backgroundImage: CachedNetworkImageProvider(userImage),
           ),
           const SizedBox(width: 16),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'user0',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold),
+                  userName,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 Text(
-                  'user0@gmail.com',
-                  style: TextStyle(color: Colors.white70),
+                  userPhone,
+                  style: const TextStyle(color: Colors.white70),
                 ),
+                if (userAddress.isNotEmpty)
+                  Text(
+                    userAddress,
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
               ],
             ),
           ),
@@ -96,7 +145,7 @@ class _FoodProfileScreenState extends State<FoodProfileScreen> {
   Widget _buildProfileOptions() {
     return Column(
       children: [
-        _buildOptionTile(Icons.history, 'Order History', 0),
+        // _buildOptionTile(Icons.history, 'Order History', 0),
         _buildOptionTile(Icons.payment, 'Payment Method', 1),
         _buildOptionTile(Icons.location_on, 'My Address', 2),
         _buildOptionTile(Icons.card_giftcard, 'My Promocodes', 3),

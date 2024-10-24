@@ -1,13 +1,14 @@
 import 'dart:async';
-
 import 'package:delivery_app/models/food_model.dart';
 import 'package:delivery_app/pages/food-OR-setting/choose_food.dart';
 import 'package:delivery_app/pages/home_user/profile.dart';
 import 'package:delivery_app/services/food_service.dart';
+import 'package:delivery_app/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FoodHomeScreen extends StatefulWidget {
   const FoodHomeScreen({super.key});
@@ -19,6 +20,7 @@ class FoodHomeScreen extends StatefulWidget {
 class _FoodHomeScreenState extends State<FoodHomeScreen> {
   int _selectedIndex = 0;
   final FoodService _foodService = FoodService();
+  final UserService _userService = UserService();
   List<Food> _foods = [];
   List<Food> _filteredFoods = [];
   bool _isLoading = true;
@@ -27,19 +29,52 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   final List<String> _categories = ['All', 'Combos', 'Sliders', 'Classic'];
 
-  // Update initState to include debouncing
+  // User-related state variables
+  String? _userId;
+  String _userName = '';
+  String _userImage = '';
+
   Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
-    _loadFoods();
+    _loadInitialData();
     _searchController.addListener(() {
       if (_debounce?.isActive ?? false) _debounce!.cancel();
       _debounce = Timer(const Duration(milliseconds: 500), () {
         _onSearchChanged();
       });
     });
+  }
+
+  Future<void> _loadInitialData() async {
+    await _loadUserData();
+    await _loadFoods();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final String? userId = prefs.getString('userId');
+
+      if (userId != null) {
+        final userData = await _userService.getUserByIdd(userId);
+        setState(() {
+          _userId = userId;
+          _userName = userData['name'] ?? 'User';
+          _userImage = userData['profileImage'] ?? '';
+        });
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading user data: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -74,7 +109,6 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
       setState(() {
         _error = e.toString();
       });
-      // Optionally show a snackbar or other error indication
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error searching foods: ${e.toString()}'),
@@ -96,7 +130,6 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
 
         final matchesCategory =
             _selectedCategory == 'All' || food.category == _selectedCategory;
-
         return matchesSearch && matchesCategory;
       }).toList();
     });
@@ -125,6 +158,7 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         elevation: 0,
+        backgroundColor: Colors.white,
         title: Text(
           'Foodgo',
           style: GoogleFonts.lobster(
@@ -132,12 +166,39 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        actions: const [
-          CircleAvatar(
-            backgroundImage: CachedNetworkImageProvider(
-                'https://i.pinimg.com/564x/43/6b/47/436b47519f01232a329d90f75dbeb3f4.jpg'),
+        actions: [
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                _userName,
+                style: GoogleFonts.fredoka(
+                  color: Colors.black,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
-          SizedBox(width: 10),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const FoodProfileScreen(),
+                ),
+              );
+            },
+            child: CircleAvatar(
+              backgroundImage: _userImage.isNotEmpty
+                  ? CachedNetworkImageProvider(_userImage)
+                  : const CachedNetworkImageProvider(
+                      'https://media.istockphoto.com/id/1223671392/vector/default-profile-picture-avatar-photo-placeholder-vector-illustration.jpg?s=612x612&w=0&k=20&c=s0aTdmT5aU6b8ot7VKm11DeID6NctRCpB755rA1BIP0='),
+            ),
+          ),
+          const SizedBox(width: 10),
         ],
       ),
       body: RefreshIndicator(
@@ -249,11 +310,10 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
 
     return Expanded(
       child: GridView.builder(
-        padding: const EdgeInsets.only(
-            bottom: 80), // เพิ่ม padding ด้านล่างให้มากขึ้นเพื่อหลีกเลี่ยง FAB
+        padding: const EdgeInsets.only(bottom: 80),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-          childAspectRatio: 0.75, // ปรับอัตราส่วนให้เหมาะสม
+          childAspectRatio: 0.75,
           crossAxisSpacing: 10,
           mainAxisSpacing: 10,
         ),
@@ -269,7 +329,6 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
   Widget _buildFoodItem(Food food) {
     return InkWell(
       onTap: () {
-        // เมื่อคลิกที่อาหาร ให้ไปที่หน้า FoodOrderComponent
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -350,8 +409,6 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
       ),
     );
   }
-
-// Add these methods inside the _FoodHomeScreenState class
 
   Widget _buildErrorState() {
     return Expanded(
@@ -515,6 +572,12 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
               ),
             );
             break;
+          case 2:
+            // Navigate to cart screen
+            break;
+          case 3:
+            // Navigate to favorites screen
+            break;
         }
       },
       child: Column(
@@ -550,10 +613,12 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
           ),
         ],
       ),
-      child: InkWell(
-        onTap: () {
-          // Action when tapped
+      child: FloatingActionButton(
+        onPressed: () {
+          // Add your action here
         },
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         child: const SizedBox(
           width: 65,
           height: 65,
