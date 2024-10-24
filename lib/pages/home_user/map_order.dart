@@ -110,7 +110,7 @@ class _mapOrderState extends State<mapOrder> with WidgetsBindingObserver {
     // Replace with your actual API endpoint and parameters
     final response = await http.get(
       Uri.parse(
-          'https://api.openrouteservice.org/v2/directions/driving-car?start=103.25207957788868,16.246671218679253&end=103.252018,16.246611'),
+          'https://api.openrouteservice.org/v2/directions/driving-car?start=103.252,16.2466083&end=103.252185,16.2466083'),
       headers: {
         'Authorization':
             'YOUR_API_KEY', // Add your OpenRouteService API Key here

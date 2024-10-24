@@ -148,7 +148,7 @@ class _FoodProfileScreenState extends State<FoodProfileScreen> {
         // _buildOptionTile(Icons.history, 'Order History', 0),
         _buildOptionTile(Icons.payment, 'Payment Method', 1),
         _buildOptionTile(Icons.location_on, 'My Address', 2),
-        _buildOptionTile(Icons.card_giftcard, 'My Promocodes', 3),
+        _buildOptionTile(Icons.card_giftcard, 'Market', 3),
         _buildOptionTile(Icons.favorite, 'My Favorite', 4),
         _buildOptionTile(Icons.exit_to_app, 'Sign out', 5),
       ],

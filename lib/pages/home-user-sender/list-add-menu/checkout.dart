@@ -64,6 +64,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     double totalAmount = 0;
     Map<String, dynamic> recipientData = {};
     Map<String, dynamic> LocationData = {};
+    Map<String, dynamic> LocationData1 = {};
 
     for (var order in widget.cartOrders) {
       var recipient = order.recipient;
@@ -79,8 +80,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
       if (LocationData.isEmpty) {
         LocationData = {
-          "latitude": 15.9717, 
-          "longitude": 102.6217
+          "latitude": 16.2466083, 
+          "longitude": 103.252,
+        };
+      }
+
+      if (LocationData1.isEmpty) {
+        LocationData1 = {
+          "latitude": 16.2466283, 
+          "longitude": 103.252185,
         };
       }
 
@@ -103,7 +111,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       'totalAmount': totalAmount,
       "sender": "6717acc4bccc05d91fafb7bd",
       "pickupLocation" : LocationData,
-      "deliveryLocation" : LocationData
+      "deliveryLocation" : LocationData1
     };
 
     try {

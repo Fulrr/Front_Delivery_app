@@ -158,7 +158,7 @@ class _SendProfileScreenState extends State<SendProfileScreen> {
 Widget _buildProfileOptions() {
     return Column(
       children: [
-        _buildOptionTile(Icons.payment, 'Payment Method', 0),
+        _buildOptionTile(Icons.card_giftcard, 'BackToHome', 0),
         _buildOptionTile(Icons.location_on, 'My Address', 1),
         _buildOptionTile(Icons.exit_to_app, 'Sign out', 2),
       ],
@@ -178,7 +178,14 @@ Widget _buildProfileOptions() {
           onTap: () async {
             switch (index) {
               case 0:
-                // Handle payment method
+                Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const FoodHomeScreen()
+                    .animate()
+                    .slideX(begin: 1, end: 0, curve: Curves.ease),
+              ),
+            );
                 break;
               case 1:
                 // Handle address

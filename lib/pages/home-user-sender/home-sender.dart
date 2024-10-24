@@ -233,84 +233,94 @@ class _HomesenderPageState extends State<HomesenderPage> {
                     itemCount: filteredOrders.length,
                     itemBuilder: (context, index) {
                       final order = filteredOrders[index];
-                      return order.items.any((item) =>
-                              item.orders ==
-                              1) // แสดงเฉพาะสินค้าที่มี orders เป็น 1
-                          ? Container(
-                              margin: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.grey.withOpacity(0.3),
-                                    spreadRadius: 1,
-                                    blurRadius: 3,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(12),
-                                    child: Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Container(
-                                          width: 60,
-                                          height: 60,
-                                          color: Colors.grey[300],
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              // วนลูปเพื่อแสดงชื่อสินค้าแต่ละชิ้น
-                                              for (var item in order.items
-                                                  .where((item) =>
-                                                      item.orders == 1))
-                                                Text(
-                                                  item.name,
-                                                  style: GoogleFonts.itim(
-                                                    color: Colors.orange,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              Text(
-                                                order.recipient.name,
-                                                style: GoogleFonts.itim(),
-                                              ),
-                                              Text(
-                                                'Phone: ${order.recipient.phone}',
-                                                style: GoogleFonts.itim(),
-                                              ),
-                                              Text(
-                                                '\$${order.totalAmount.toStringAsFixed(2)}',
-                                                style: GoogleFonts.itim(
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        GestureDetector(
-                                          onTap: () => addToCart(order),
-                                          child: const Icon(
-                                              Icons.add_shopping_cart),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : const SizedBox(); // Do not display if no item has orders == 1
+                      // แก้ไขในส่วนของการแสดงรายการคำสั่งซื้อ
+return order.items.any((item) => item.orders == 1)
+    ? Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.3),
+              spreadRadius: 1,
+              blurRadius: 3,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // แสดงภาพสินค้า
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: order.imageUrls.isNotEmpty
+                        ? Image.network(
+                            order.imageUrls[0], // ดึง URL รูปภาพแรก
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              color: Colors.grey[300],
+                              child: const Icon(Icons.image_not_supported),
+                            ),
+                          )
+                        : Container(
+                            width: 60,
+                            height: 60,
+                            color: Colors.grey[300],
+                            child: const Icon(Icons.image_not_supported),
+                          ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // วนลูปเพื่อแสดงชื่อสินค้าแต่ละชิ้น
+                        for (var item in order.items.where((item) => item.orders == 1))
+                          Text(
+                            item.name,
+                            style: GoogleFonts.itim(
+                              color: Colors.orange,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        Text(
+                          order.recipient.name,
+                          style: GoogleFonts.itim(),
+                        ),
+                        Text(
+                          'Phone: ${order.recipient.phone}',
+                          style: GoogleFonts.itim(),
+                        ),
+                        Text(
+                          '\$${order.totalAmount.toStringAsFixed(2)}',
+                          style: GoogleFonts.itim(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => addToCart(order),
+                    child: const Icon(Icons.add_shopping_cart),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      )
+    : const SizedBox(); // Do not display if no item has orders == 1
+ // Do not display if no item has orders == 1
                     },
                   ),
           ),

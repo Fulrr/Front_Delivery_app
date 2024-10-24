@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 import 'package:delivery_app/pages/home-user-sender/home-sender.dart';
 import 'package:delivery_app/pages/home-user-sender/list-add-menu/Lunch.dart';
@@ -15,95 +16,60 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class cartUser extends StatefulWidget {
-  const cartUser({super.key});
+  final String userName;
+  final String userEmail;
+  final String userPhone;
+  final String userImage;
+  final String userAddress;
+
+  const cartUser({
+    Key? key,
+    required this.userName,
+    required this.userEmail,
+    required this.userPhone,
+    required this.userImage,
+    required this.userAddress,
+  }) : super(key: key);
 
   @override
-  State<cartUser> createState() => _cartUserState();
+  _cartUserState createState() => _cartUserState();
 }
 
 class _cartUserState extends State<cartUser> {
   int _selectedIndex = 1;
   List<dynamic> orders = [];
   bool isLoading = false;
-  List<File> selectedImages = [];
-
-  String userType = 'user';
-
-  // User data fields
-  String userName = '';
-  String userEmail = '';
-  String userPhone = '';
-  String userImage = '';
-  String userAddress = '';
-
-  Future<void> _loadUserData() async {
-    try {
-      final SharedPreferences prefs = await SharedPreferences.getInstance();
-      final String? userId = prefs.getString('userId');
-
-      if (userId != null) {
-        final userData = await UserService().getUserByIdd(userId);
-        setState(() {
-          userName = userData['name'] ?? 'User';
-          userEmail = userData['email'] ?? 'user@example.com';
-          userPhone = userData['phone'] ?? '';
-          userImage = userData['profileImage'] ??
-              'https://i.pinimg.com/564x/43/6b/47/436b47519f01232a329d90f75dbeb3f4.jpg';
-          userAddress = userData['address'] ?? '';
-        });
-      }
-    } catch (e) {
-      print('Error loading user data: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error loading user data: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
 
   @override
-void initState() {
+  void initState() {
     super.initState();
-    _loadUserData();
     fetchAvailableOrders();
-}
-
+  }
 
   Future<void> fetchAvailableOrders() async {
-  setState(() {
-    isLoading = true;
-  });
+    setState(() {
+      isLoading = true;
+    });
 
-  try {
-    final response = await http.get(Uri.parse(getAvailableOrders));
-    if (response.statusCode == 200) {
-      // Decode the response and filter orders based on user's phone number
-      List<dynamic> allOrders = json.decode(response.body);
-
-      // ตรวจสอบว่า orders มีข้อมูลของ recipient ที่ตรงกับ userPhone หรือไม่
-      orders = allOrders.where((order) => order['recipient']['phone'] == userPhone).toList();
-      
+    try {
+      final response = await http.get(Uri.parse('https://back-deliverys.onrender.com/api/orders/')); // ใส่ URL ของ API ที่ใช้ในการดึงคำสั่งซื้อ
+      if (response.statusCode == 200) {
+        List<dynamic> allOrders = json.decode(response.body);
+        orders = allOrders.where((order) => order['recipient']['phone'] == widget.userPhone).toList();
+      } else {
+        throw Exception('Failed to load orders');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('เกิดข้อผิดพลาดในการโหลดข้อมูล: $e')),
+      );
+    } finally {
       setState(() {
         isLoading = false;
       });
-    } else {
-      throw Exception('Failed to load orders');
     }
-  } catch (e) {
-    setState(() {
-      isLoading = false;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('เกิดข้อผิดพลาดในการโหลดข้อมูล: $e')),
-    );
   }
-}
 
-
-
-  // Helper method to get order status text and color
   Map<String, dynamic> getOrderStatusInfo(int status) {
     switch (status) {
       case 1:

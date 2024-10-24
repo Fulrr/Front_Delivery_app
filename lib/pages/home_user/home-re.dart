@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'package:delivery_app/models/food_model.dart';
 import 'package:delivery_app/pages/food-OR-setting/choose_food.dart';
 import 'package:delivery_app/pages/home_user/cartuser.dart';
@@ -31,9 +32,14 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
   final List<String> _categories = ['All', 'Combos', 'Sliders', 'Classic'];
 
   // User-related state variables
-  String? _userId;
-  String _userName = '';
-  String _userImage = '';
+  String userType = 'user';
+
+  // User data fields
+  String userName = '';
+  String userEmail = '';
+  String userPhone = '';
+  String userImage = '';
+  String userAddress = '';
 
   Timer? _debounce;
 
@@ -54,17 +60,46 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
     await _loadFoods();
   }
 
+  // Future<void> _loadUserData() async {
+  //   try {
+  //     final SharedPreferences prefs = await SharedPreferences.getInstance();
+  //     final String? userId = prefs.getString('userId');
+
+  //     if (userId != null) {
+  //       final userData = await _userService.getUserByIdd(userId);
+  //       setState(() {
+  //         _userId = userId;
+  //         _userName = userData['name'] ?? 'User';
+  //         _userImage = userData['profileImage'] ?? '';
+  //         _userPhone = userData['phone'] ?? '';
+  //       });
+  //     }
+  //   } catch (e) {
+  //     print('Error loading user data: $e');
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text('Error loading user data: $e'),
+  //         backgroundColor: Colors.red,
+  //       ),
+  //     );
+  //   }
+  // }
+
   Future<void> _loadUserData() async {
     try {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       final String? userId = prefs.getString('userId');
 
       if (userId != null) {
-        final userData = await _userService.getUserByIdd(userId);
+        final userData = await UserService().getUserByIdd(userId);
         setState(() {
-          _userId = userId;
-          _userName = userData['name'] ?? 'User';
-          _userImage = userData['profileImage'] ?? '';
+          userName = userData['name'] ?? 'User';
+          userEmail = userData['email'] ?? 'user@example.com';
+          userPhone = userData['phone'] ?? '';
+          userImage = userData['profileImage'] ??
+              'https://i.pinimg.com/564x/43/6b/47/436b47519f01232a329d90f75dbeb3f4.jpg';
+          userAddress = userData['address'] ?? '';
+          log('$userPhone');
         });
       }
     } catch (e) {
@@ -173,7 +208,7 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                _userName,
+                userName,
                 style: GoogleFonts.fredoka(
                   color: Colors.black,
                   fontSize: 14,
@@ -193,8 +228,8 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
               );
             },
             child: CircleAvatar(
-              backgroundImage: _userImage.isNotEmpty
-                  ? CachedNetworkImageProvider(_userImage)
+              backgroundImage: userImage.isNotEmpty
+                  ? CachedNetworkImageProvider(userImage)
                   : const CachedNetworkImageProvider(
                       'https://media.istockphoto.com/id/1223671392/vector/default-profile-picture-avatar-photo-placeholder-vector-illustration.jpg?s=612x612&w=0&k=20&c=s0aTdmT5aU6b8ot7VKm11DeID6NctRCpB755rA1BIP0='),
             ),
@@ -577,9 +612,13 @@ class _FoodHomeScreenState extends State<FoodHomeScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const cartUser()
-                    .animate()
-                    .slideX(begin: 1, end: 0, curve: Curves.ease),
+                builder: (context) => cartUser(
+                  userName: userName,
+                  userEmail: userEmail,
+                  userPhone: userPhone,
+                  userImage: userImage,
+                  userAddress: userAddress,
+                ),
               ),
             );
             break;

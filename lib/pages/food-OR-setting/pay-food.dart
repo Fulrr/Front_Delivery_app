@@ -1,4 +1,7 @@
+import 'package:delivery_app/pages/home_user/cartuser.dart';
+import 'package:delivery_app/pages/home_user/home-re.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:delivery_app/models/food_model.dart'; // นำเข้าโมเดล Food
 
@@ -83,7 +86,14 @@ class _PaymentPageState extends State<PaymentPage> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    // Handle payment logic
+                    Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const FoodHomeScreen()
+                    .animate()
+                    .slideX(begin: 1, end: 0, curve: Curves.ease),
+              ),
+            );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.black,
