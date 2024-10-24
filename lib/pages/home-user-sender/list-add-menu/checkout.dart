@@ -42,7 +42,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       final String deleteUrl =
           'https://back-deliverys.onrender.com/api/orders/${order.id}';
       final String deleteOrder =
-          'http://10.210.60.215:8081/api/orders/del/${order.id}';
+          'http://back-deliverys.onrender.com/api/orders/del/${order.id}';
 
       try {
         final response = await http.delete(Uri.parse(deleteOrder));
@@ -78,10 +78,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       }
 
       if (LocationData.isEmpty) {
-        LocationData = {
-          "latitude": 15.9717, 
-          "longitude": 102.6217
-        };
+        LocationData = {"latitude": 15.9717, "longitude": 102.6217};
       }
 
       for (var item in order.items) {
@@ -102,8 +99,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
       'items': items,
       'totalAmount': totalAmount,
       "sender": "6717acc4bccc05d91fafb7bd",
-      "pickupLocation" : LocationData,
-      "deliveryLocation" : LocationData
+      "pickupLocation": LocationData,
+      "deliveryLocation": LocationData
     };
 
     try {
