@@ -35,13 +35,17 @@ class _RealTimeMapPageState extends State<RealTimeMapPage>
   bool _mapReady = false;
   Timer? _locationUpdateTimer;
   bool _isFollowingUser = true;
+  double _currentZoom = 16.0;
 
-  // เพิ่มตัวแปรเก็บพิกัด
   LatLng? _pickupLocation;
   LatLng? _deliveryLocation;
-  String? riderId; // เพิ่มตัวแปรสำหรับเก็บ riderId
-  Timer? _riderLocationTimer; // Timer สำหรับเรียก API ดึงตำแหน่งไรเดอร์
-  LatLng? _riderLocation; // ตำแหน่งของไรเดอร์
+  String? riderId;
+  Timer? _riderLocationTimer;
+  LatLng? _riderLocation;
+
+  // Add new variables for UI state
+  bool _isLoading = false;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -49,7 +53,7 @@ class _RealTimeMapPageState extends State<RealTimeMapPage>
     WidgetsBinding.instance.addObserver(this);
     _initializeLocation().then((_) {
       _loadOrderLocations();
-      _getRiderId(); // เรียกฟังก์ชันดึง riderId
+      _getRiderId();
     });
     _getUserId();
   }
@@ -435,16 +439,378 @@ class _RealTimeMapPageState extends State<RealTimeMapPage>
     return WillPopScope(
       onWillPop: () async => false,
       child: Scaffold(
-        appBar: AppBar(
-          title: Text('ติดตามการจัดส่ง'),
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          automaticallyImplyLeading: false,
-          elevation: 0,
+        key: _scaffoldKey,
+        appBar: _buildAppBar(),
+        body: Stack(
+          children: [
+            if (_mapReady) _buildEnhancedMap(),
+            if (!_mapReady)
+              Container(
+                color: Colors.white,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text('กำลังโหลดแผนที่...',
+                          style: TextStyle(fontSize: 16)),
+                    ],
+                  ),
+                ),
+              ),
+            if (_isLoading)
+              Container(
+                color: Colors.black54,
+                child: Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+              ),
+            _buildBottomPanel(),
+          ],
         ),
-        body: _mapReady
-            ? _buildMap()
-            : Center(child: CircularProgressIndicator()),
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('ติดตามการจัดส่ง',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          Text('Order ID: ${widget.orderId}',
+              style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+        ],
+      ),
+      backgroundColor: Colors.white,
+      foregroundColor: Colors.black,
+      automaticallyImplyLeading: false,
+      elevation: 2,
+      actions: [
+        IconButton(
+          icon: Icon(Icons.help_outline),
+          onPressed: () => _showHelpDialog(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEnhancedMap() {
+    return FlutterMap(
+      mapController: _mapController,
+      options: MapOptions(
+        initialCenter: _currentPosition,
+        initialZoom: _currentZoom,
+        minZoom: 5,
+        maxZoom: 18,
+        onPositionChanged: (position, hasGesture) {
+          if (hasGesture) setState(() => _isFollowingUser = false);
+        },
+        interactionOptions: InteractionOptions(
+          flags: InteractiveFlag.all,
+        ),
+      ),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          userAgentPackageName: 'com.example.delivery_app',
+        ),
+        PolylineLayer(
+          polylines: _buildRoutePolylines(),
+        ),
+        MarkerLayer(
+          markers: _buildEnhancedMarkers(),
+        ),
+      ],
+    );
+  }
+
+  List<Polyline> _buildRoutePolylines() {
+    List<Polyline> polylines = [];
+
+    if (_riderLocation != null && _pickupLocation != null && !_hasPickedUp) {
+      polylines.add(
+        Polyline(
+          points: [_riderLocation!, _pickupLocation!],
+          color: Colors.blue.withOpacity(0.7),
+          strokeWidth: 3.0,
+        ),
+      );
+    }
+
+    if (_hasPickedUp &&
+        !_isDelivered &&
+        _riderLocation != null &&
+        _deliveryLocation != null) {
+      polylines.add(
+        Polyline(
+          points: [_riderLocation!, _deliveryLocation!],
+          color: Colors.green.withOpacity(0.7),
+          strokeWidth: 3.0,
+        ),
+      );
+    }
+
+    return polylines;
+  }
+
+  List<Marker> _buildEnhancedMarkers() {
+    List<Marker> markers = [];
+
+    // Rider marker with custom design
+    if (_riderLocation != null) {
+      markers.add(
+        Marker(
+          point: _riderLocation!,
+          width: 50,
+          height: 50,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.blue,
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(Icons.delivery_dining, color: Colors.white, size: 30),
+          ),
+        ),
+      );
+    }
+
+    // Pickup location marker
+    if (_pickupLocation != null && !_hasPickedUp) {
+      markers.add(
+        Marker(
+          point: _pickupLocation!,
+          width: 50,
+          height: 50,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.green,
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(Icons.store, color: Colors.white, size: 30),
+          ),
+        ),
+      );
+    }
+
+    // Delivery location marker
+    if (_deliveryLocation != null && _hasPickedUp && !_isDelivered) {
+      markers.add(
+        Marker(
+          point: _deliveryLocation!,
+          width: 50,
+          height: 50,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.red,
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(Icons.location_on, color: Colors.white, size: 30),
+          ),
+        ),
+      );
+    }
+
+    return markers;
+  }
+
+  Widget _buildBottomPanel() {
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 10,
+              offset: Offset(0, -2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildStatusIndicator(),
+            SizedBox(height: 16),
+            _buildActionButtons(),
+            SizedBox(height: 8),
+            _buildMapControls(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusIndicator() {
+    return Row(
+      children: [
+        Icon(
+          _isDelivered
+              ? Icons.check_circle
+              : _hasPickedUp
+                  ? Icons.local_shipping
+                  : Icons.pending,
+          color: _isDelivered
+              ? Colors.green
+              : _hasPickedUp
+                  ? Colors.blue
+                  : Colors.orange,
+        ),
+        SizedBox(width: 8),
+        Text(
+          _isDelivered
+              ? 'จัดส่งเสร็จสิ้น'
+              : _hasPickedUp
+                  ? 'กำลังจัดส่ง'
+                  : 'รอรับสินค้า',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Column(
+      children: [
+        if (!_hasPickedUp)
+          ElevatedButton(
+            onPressed: _confirmPickup,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(vertical: 16),
+              minimumSize: Size(double.infinity, 48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text('ยืนยันการรับสินค้า',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ),
+        if (_hasPickedUp && !_isDelivered) ...[
+          SizedBox(height: 8),
+          ElevatedButton(
+            onPressed: _completeDelivery,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(vertical: 16),
+              minimumSize: Size(double.infinity, 48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text('ยืนยันการส่งสินค้า',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildMapControls() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        FloatingActionButton(
+          heroTag: "my_location",
+          mini: true,
+          onPressed: () {
+            setState(() {
+              _isFollowingUser = true;
+              _mapController.move(_currentPosition, _currentZoom);
+            });
+          },
+          child: Icon(Icons.my_location),
+        ),
+        SizedBox(width: 8),
+        Column(
+          children: [
+            FloatingActionButton(
+              heroTag: "zoom_in",
+              mini: true,
+              onPressed: () {
+                setState(() {
+                  _currentZoom = min(_currentZoom + 1.0, 18.0);
+                  _mapController.move(
+                      _mapController.camera.center, _currentZoom);
+                });
+              },
+              child: Icon(Icons.add),
+            ),
+            SizedBox(height: 8),
+            FloatingActionButton(
+              heroTag: "zoom_out",
+              mini: true,
+              onPressed: () {
+                setState(() {
+                  _currentZoom = max(_currentZoom - 1.0, 5.0);
+                  _mapController.move(
+                      _mapController.camera.center, _currentZoom);
+                });
+              },
+              child: Icon(Icons.remove),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _showHelpDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('คำแนะนำการใช้งาน'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('• กดปุ่ม 📍 เพื่อกลับไปที่ตำแหน่งปัจจุบัน'),
+            Text('• กดปุ่ม + - เพื่อซูมแผนที่เข้า-ออก'),
+            Text('• ต้องอยู่ในระยะ 20 เมตรจากจุดรับ-ส่งสินค้า'),
+            Text('• ต้องถ่ายรูปเพื่อยืนยันการรับ-ส่งสินค้า'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('เข้าใจแล้ว'),
+          ),
+        ],
       ),
     );
   }
@@ -554,41 +920,6 @@ class _RealTimeMapPageState extends State<RealTimeMapPage>
           });
         },
         child: Icon(Icons.my_location),
-      ),
-    );
-  }
-
-  Widget _buildActionButtons() {
-    return Positioned(
-      bottom: 16,
-      left: 16,
-      right: 16,
-      child: Column(
-        children: [
-          if (!_hasPickedUp)
-            ElevatedButton(
-              onPressed: _confirmPickup,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                padding: EdgeInsets.symmetric(vertical: 16),
-                minimumSize: Size(double.infinity, 48),
-              ),
-              child: Text('ยืนยันการรับสินค้า', style: TextStyle(fontSize: 18)),
-            ),
-          SizedBox(height: 8),
-          ElevatedButton(
-            onPressed: _isDelivered ? null : _completeDelivery,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              padding: EdgeInsets.symmetric(vertical: 16),
-              minimumSize: Size(double.infinity, 48),
-            ),
-            child: Text(
-              _isDelivered ? 'ส่งสินค้าเสร็จสิ้น' : 'ยืนยันการส่งสินค้า',
-              style: TextStyle(fontSize: 18),
-            ),
-          ),
-        ],
       ),
     );
   }

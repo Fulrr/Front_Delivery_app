@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
+import 'package:http_parser/http_parser.dart'; // เพิ่ม import นี้
 
 class SignUpRider extends StatefulWidget {
   const SignUpRider({super.key});
@@ -74,54 +75,94 @@ class _SignUpRiderState extends State<SignUpRider> {
     }
   }
 
+  // In _registerUser method of _SignUpRiderState class
   Future<void> _registerUser() async {
+    if (_image == null) {
+      _showErrorDialog('กรุณาเลือกรูปโปรไฟล์');
+      return;
+    }
+
+    // Validate all fields are filled
+    if (_nameController.text.isEmpty ||
+        _phoneController.text.isEmpty ||
+        _passwordController.text.isEmpty ||
+        _confirmPasswordController.text.isEmpty ||
+        _addressController.text.isEmpty ||
+        _vehicleNumberController.text.isEmpty) {
+      _showErrorDialog('กรุณากรอกข้อมูลให้ครบถ้วน');
+      return;
+    }
+
+    // Validate password match
+    if (_passwordController.text != _confirmPasswordController.text) {
+      _showErrorDialog('รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // Prepare the registration data
-      final Map<String, dynamic> registrationData = {
-        'name': _nameController.text,
-        'phone': _phoneController.text,
-        'password': _passwordController.text,
-        'confpass': _confirmPasswordController.text,
-        'type': 'rider',
-        'address': _addressController.text,
-        'latitude': _latitudeController.text,
-        'longitude': _longitudeController.text,
-        'vehicleNumber': _vehicleNumberController.text,
-      };
-
       // Create multipart request
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('https://back-deliverys.onrender.com/api/users/registration'),
+        Uri.parse('http://192.168.0.200:8081/api/users/registration'),
       );
 
-      // Add text fields
-      registrationData.forEach((key, value) {
-        request.fields[key] = value.toString();
-      });
+      // Add all required fields with explicit type conversion
+      final Map<String, String> fields = {
+        'name': _nameController.text.trim(),
+        'phone': _phoneController.text.trim(),
+        'password': _passwordController.text,
+        'confpass': _confirmPasswordController.text,
+        'type': 'rider',
+        'address': _addressController.text.trim(),
+        'latitude': _latitudeController.text.trim(),
+        'longitude': _longitudeController.text.trim(),
+        'vehicleNumber': _vehicleNumberController.text.trim(),
+        'status': 'available' // Add default status for rider
+      };
 
-      // Add image if selected
+      request.fields.addAll(fields);
+
+      // Debug print
+      print('Sending fields: $fields');
+
+      // Add image file
       if (_image != null) {
-        request.files.add(
-          await http.MultipartFile.fromPath(
-            'profileImage',
-            _image!.path,
-          ),
+        var imageStream = http.ByteStream(_image!.openRead());
+        var length = await _image!.length();
+
+        var multipartFile = http.MultipartFile(
+          'profileImage',
+          imageStream,
+          length,
+          filename: 'profile_${DateTime.now().millisecondsSinceEpoch}.jpg',
+          contentType: MediaType('image', 'jpeg'),
         );
+
+        request.files.add(multipartFile);
       }
 
-      // Send the request
-      final response = await request.send();
-      final responseData = await response.stream.bytesToString();
-      final decodedResponse = json.decode(responseData);
+      // Add headers
+      request.headers.addAll({
+        'Content-Type': 'multipart/form-data',
+        'Accept': 'application/json',
+      });
+
+      // Send request and get response
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      // Debug logging
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         if (!mounted) return;
 
+        // Show success dialog
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -146,14 +187,22 @@ class _SignUpRiderState extends State<SignUpRider> {
           },
         );
       } else {
+        // Try to decode error message from response
+        Map<String, dynamic>? errorResponse;
+        try {
+          errorResponse = json.decode(response.body);
+        } catch (e) {
+          print('Error decoding response: $e');
+        }
+
         if (!mounted) return;
-        _showErrorDialog(decodedResponse['message'] ??
+        _showErrorDialog(errorResponse?['message'] ??
             'การลงทะเบียนล้มเหลว กรุณาลองใหม่อีกครั้ง');
       }
     } catch (e) {
+      print('Error during registration: $e');
       if (!mounted) return;
       _showErrorDialog('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง');
-      log('Registration error: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -334,6 +383,7 @@ class _SignUpRiderState extends State<SignUpRider> {
                   // Address Field
                   TextFormField(
                     controller: _addressController,
+                    enabled: true, // เปลี่ยนจาก false เป็น true
                     decoration: InputDecoration(
                       labelText: 'ADDRESS',
                       suffixIcon: _isAddressValid

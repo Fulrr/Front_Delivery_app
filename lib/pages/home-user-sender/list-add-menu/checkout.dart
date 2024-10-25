@@ -59,7 +59,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   Future<void> createOrder(BuildContext context) async {
-    final String baseUrl = 'https://back-deliverys.onrender.com/api/orders/';
+    final String baseUrl = 'http://192.168.0.200:8081/api/orders/';
     List<Map<String, dynamic>> items = [];
     double totalAmount = 0;
     Map<String, dynamic> recipientData = {};

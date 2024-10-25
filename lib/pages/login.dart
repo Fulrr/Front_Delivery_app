@@ -21,7 +21,7 @@ class AuthConstants {
 // Authentication service
 class AuthService {
   final String loginUrl;
-  
+
   AuthService({required this.loginUrl});
 
   Future<Map<String, dynamic>> login(String phone, String password) async {
@@ -50,7 +50,8 @@ class LoginScreen extends StatefulWidget {
   _LoginScreenState createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -58,11 +59,12 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   bool _isLoading = false;
   bool _isPasswordVisible = false;
   late final AuthService _authService;
-  
+
   @override
   void initState() {
     super.initState();
-    _authService = AuthService(loginUrl: login); // Replace 'login' with your URL
+    _authService =
+        AuthService(loginUrl: login); // Replace 'login' with your URL
     _initSharedPreferences();
   }
 
@@ -252,7 +254,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           text: "Don't have an UserAccount? ",
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => SignUpScreen()),
+            MaterialPageRoute(
+              builder: (context) => SignUpScreen(
+                userType: 'user',
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 8),
@@ -260,14 +266,31 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           text: "Don't have an RiderAccount? ",
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => SignUpRider()),
+            MaterialPageRoute(
+              builder: (context) => SignUpScreen(
+                userType: 'rider',
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        _buildSignUpOption(
+          text: "Don't have a SenderAccount? ",
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => SignUpScreen(
+                userType: 'send',
+              ),
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildSignUpOption({required String text, required VoidCallback onTap}) {
+  Widget _buildSignUpOption(
+      {required String text, required VoidCallback onTap}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [

@@ -52,10 +52,19 @@ class _cartUserState extends State<cartUser> {
     });
 
     try {
-      final response = await http.get(Uri.parse('https://back-deliverys.onrender.com/api/orders/')); // ใส่ URL ของ API ที่ใช้ในการดึงคำสั่งซื้อ
+      final response =
+          await http.get(Uri.parse('http://192.168.0.200:8081/api/orders/'));
       if (response.statusCode == 200) {
         List<dynamic> allOrders = json.decode(response.body);
-        orders = allOrders.where((order) => order['recipient']['phone'] == widget.userPhone).toList();
+        setState(() {
+          // Filter orders where recipient phone matches and items.orders is not 0
+          orders = allOrders.where((order) {
+            bool hasValidOrders = order['items']
+                .every((item) => item['orders'] != 0 && item['orders'] != 1);
+            return order['recipient']['phone'] == widget.userPhone &&
+                hasValidOrders;
+          }).toList();
+        });
       } else {
         throw Exception('Failed to load orders');
       }
@@ -70,20 +79,48 @@ class _cartUserState extends State<cartUser> {
     }
   }
 
-  Map<String, dynamic> getOrderStatusInfo(int status) {
-    switch (status) {
-      case 1:
-        return {'text': 'รอการยืนยัน', 'color': Colors.orange};
-      case 2:
-        return {'text': 'กำลังจัดเตรียม', 'color': Colors.blue};
-      case 3:
-        return {'text': 'พร้อมจัดส่ง', 'color': Colors.green};
-      case 4:
-        return {'text': 'กำลังจัดส่ง', 'color': Colors.purple};
-      case 5:
-        return {'text': 'จัดส่งสำเร็จ', 'color': Colors.teal};
+  Future<void> _refreshData() async {
+    await fetchAvailableOrders();
+  }
+
+  Map<String, dynamic> getOrderStatusInfo(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return {
+          'text': 'รอการยืนยัน',
+          'color': Colors.orange,
+          'icon': Icons.hourglass_empty
+        };
+      case 'processing':
+        return {
+          'text': 'กำลังดำเนินการ',
+          'color': Colors.blue,
+          'icon': Icons.sync
+        };
+      case 'shipped':
+        return {
+          'text': 'จัดส่งแล้ว',
+          'color': Colors.green,
+          'icon': Icons.local_shipping
+        };
+      case 'delivered':
+        return {
+          'text': 'จัดส่งสำเร็จ',
+          'color': Colors.teal,
+          'icon': Icons.check_circle
+        };
+      case 'cancelled':
+        return {
+          'text': 'ยกเลิกแล้ว',
+          'color': Colors.red,
+          'icon': Icons.cancel
+        };
       default:
-        return {'text': 'ไม่ทราบสถานะ', 'color': Colors.grey};
+        return {
+          'text': 'ไม่ทราบสถานะ',
+          'color': Colors.grey,
+          'icon': Icons.help_outline
+        };
     }
   }
 
@@ -95,6 +132,12 @@ class _cartUserState extends State<cartUser> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _refreshData,
+          ),
+        ],
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,138 +162,175 @@ class _cartUserState extends State<cartUser> {
             ),
           ),
           Expanded(
-            child: isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : orders.isEmpty
-                    ? const Center(child: Text('ไม่มีรายการอาหาร'))
-                    : ListView.builder(
-                        itemCount: orders.length,
-                        itemBuilder: (context, index) {
-                          final order = orders[index];
-                          final statusInfo = getOrderStatusInfo(order['items'][0]['orders']);
+            child: RefreshIndicator(
+              onRefresh: _refreshData,
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : orders.isEmpty
+                      ? ListView(
+                          children: const [
+                            Center(
+                              child: Padding(
+                                padding: EdgeInsets.only(top: 100),
+                                child: Text('ไม่มีรายการอาหาร'),
+                              ),
+                            ),
+                          ],
+                        )
+                      : ListView.builder(
+                          itemCount: orders.length,
+                          itemBuilder: (context, index) {
+                            final order = orders[index];
+                            final statusInfo =
+                                getOrderStatusInfo(order['status']);
 
-                          return Card(
-                            margin: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
-                            child: Column(
-                              children: [
-                                ListTile(
-                                  leading: Container(
-                                    width: 60,
-                                    height: 60,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(8),
-                                      color: Colors.grey[200],
-                                    ),
-                                    child: order['imageUrls'].isNotEmpty
-                                        ? ClipRRect(
-                                            borderRadius: BorderRadius.circular(8),
-                                            child: Image.network(
-                                              order['imageUrls'][0],
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (context, error, stackTrace) =>
-                                                  const Icon(Icons.image_not_supported),
-                                            ),
-                                          )
-                                        : const Icon(Icons.image_not_supported),
-                                  ),
-                                  title: Text(
-                                    order['items'][0]['name'],
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                  subtitle: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '฿${order['totalAmount'].toStringAsFixed(2)}',
-                                        style: const TextStyle(
-                                          color: Colors.green,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                            return Card(
+                              margin: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
+                              child: Column(
+                                children: [
+                                  ListTile(
+                                    leading: Container(
+                                      width: 60,
+                                      height: 60,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(8),
+                                        color: Colors.grey[200],
                                       ),
-                                      const SizedBox(height: 4),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: statusInfo['color'].withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: Text(
-                                          statusInfo['text'],
-                                          style: TextStyle(
-                                            color: statusInfo['color'],
-                                            fontSize: 12,
+                                      child: order['imageUrls'].isNotEmpty
+                                          ? ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              child: Image.network(
+                                                order['imageUrls'][0],
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (context, error,
+                                                        stackTrace) =>
+                                                    const Icon(Icons
+                                                        .image_not_supported),
+                                              ),
+                                            )
+                                          : const Icon(
+                                              Icons.image_not_supported),
+                                    ),
+                                    title: Text(
+                                      order['items'][0]['name'],
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    subtitle: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '฿${order['totalAmount'].toStringAsFixed(2)}',
+                                          style: const TextStyle(
+                                            color: Colors.green,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                        const SizedBox(height: 4),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: statusInfo['color']
+                                                .withOpacity(0.1),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                statusInfo['icon'],
+                                                size: 16,
+                                                color: statusInfo['color'],
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                statusInfo['text'],
+                                                style: TextStyle(
+                                                  color: statusInfo['color'],
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    MapOrder(order: order),
+                                              ),
+                                            );
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.orange,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 8,
+                                            ),
+                                          ),
+                                          child: const Text('รายละเอียด'),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      ElevatedButton(
-                                        onPressed: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  mapOrder(order: order),
+                                  if (order['imageUrls'].length > 1) ...[
+                                    const Divider(),
+                                    SizedBox(
+                                      height: 80,
+                                      child: ListView.builder(
+                                        scrollDirection: Axis.horizontal,
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 16),
+                                        itemCount: order['imageUrls'].length,
+                                        itemBuilder: (context, imageIndex) {
+                                          return Padding(
+                                            padding:
+                                                const EdgeInsets.only(right: 8),
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              child: Image.network(
+                                                order['imageUrls'][imageIndex],
+                                                width: 80,
+                                                height: 80,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (context, error,
+                                                        stackTrace) =>
+                                                    Container(
+                                                  width: 80,
+                                                  height: 80,
+                                                  color: Colors.grey[300],
+                                                  child:
+                                                      const Icon(Icons.error),
+                                                ),
+                                              ),
                                             ),
                                           );
                                         },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.orange,
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 8,
-                                          ),
-                                        ),
-                                        child: const Text('รายละเอียด'),
                                       ),
-                                    ],
-                                  ),
-                                ),
-                                if (order['imageUrls'].length > 1) ...[
-                                  const Divider(),
-                                  SizedBox(
-                                    height: 80,
-                                    child: ListView.builder(
-                                      scrollDirection: Axis.horizontal,
-                                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                                      itemCount: order['imageUrls'].length,
-                                      itemBuilder: (context, imageIndex) {
-                                        return Padding(
-                                          padding: const EdgeInsets.only(right: 8),
-                                          child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(8),
-                                            child: Image.network(
-                                              order['imageUrls'][imageIndex],
-                                              width: 80,
-                                              height: 80,
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (context, error, stackTrace) =>
-                                                  Container(
-                                                width: 80,
-                                                height: 80,
-                                                color: Colors.grey[300],
-                                                child: const Icon(Icons.error),
-                                              ),
-                                            ),
-                                          ),
-                                        );
-                                      },
                                     ),
-                                  ),
+                                  ],
                                 ],
-                              ],
-                            ),
-                          );
-                        },
-                      ),
+                              ),
+                            );
+                          },
+                        ),
+            ),
           ),
         ],
       ),
