@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:delivery_app/services/user_service.dart';
 import 'package:delivery_app/models/order.dart';
 import 'package:delivery_app/pages/home-user-sender/list-add-menu/CartPage.dart';
 import 'package:delivery_app/pages/home-user-sender/list-add-menu/all-page.dart';
@@ -25,12 +28,51 @@ class _HomesenderPageState extends State<HomesenderPage> {
   bool isLoading = false;
   TextEditingController searchController = TextEditingController();
 
+  // เพิ่มตัวแปรสำหรับข้อมูลผู้ใช้
+  final UserService _userService = UserService();
+  String? _userId;
+  String _userName = '';
+  String _userImage = '';
+
   final String url = 'http://192.168.0.200:8081/api/orders/';
 
   @override
   void initState() {
     super.initState();
-    fetchOrders();
+    _loadInitialData();
+  }
+
+  // เพิ่มฟังก์ชันโหลดข้อมูลเริ่มต้น
+  Future<void> _loadInitialData() async {
+    await _loadUserData();
+    await fetchOrders();
+  }
+
+  // เพิ่มฟังก์ชันโหลดข้อมูลผู้ใช้
+  Future<void> _loadUserData() async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final String? userId = prefs.getString('userId');
+
+      if (userId != null) {
+        final userData = await _userService.getUserByIdd(userId);
+        setState(() {
+          _userId = userId;
+          _userName = userData['name'] ?? 'ผู้ส่งอาหาร';
+          _userImage = userData['profileImage'] ?? '';
+        });
+      }
+    } catch (e) {
+      print('เกิดข้อผิดพลาดในการโหลดข้อมูลผู้ใช้: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('เกิดข้อผิดพลาดในการโหลดข้อมูลผู้ใช้: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> fetchOrders() async {
@@ -122,34 +164,52 @@ class _HomesenderPageState extends State<HomesenderPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.black),
-          onPressed: () {},
-        ),
-        title: const Row(
-          children: [
-            Text(
-              'LOCATION',
-              style: TextStyle(color: Colors.orange, fontSize: 14),
-            ),
-            SizedBox(width: 8),
-            Text(
-              'Halal Lab office',
-              style: TextStyle(color: Colors.black, fontSize: 16),
-            ),
-            Icon(Icons.arrow_drop_down, color: Colors.black),
-          ],
+        automaticallyImplyLeading: false,
+        elevation: 0,
+        backgroundColor: Colors.white,
+        title: Text(
+          'Foodgo',
+          style: GoogleFonts.lobster(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 16),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                _userName,
+                style: GoogleFonts.fredoka(
+                  color: Colors.black,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SendProfileScreen(),
+                ),
+              );
+            },
             child: CircleAvatar(
-              backgroundColor: Colors.grey[300],
-              radius: 15,
+              radius: 20,
+              backgroundColor: Colors.grey[200],
+              backgroundImage: _userImage.isNotEmpty
+                  ? CachedNetworkImageProvider(_userImage)
+                  : const CachedNetworkImageProvider(
+                      'https://media.istockphoto.com/id/1223671392/vector/default-profile-picture-avatar-photo-placeholder-vector-illustration.jpg?s=612x612&w=0&k=20&c=s0aTdmT5aU6b8ot7VKm11DeID6NctRCpB755rA1BIP0='),
             ),
           ),
+          const SizedBox(width: 10),
         ],
-        elevation: 0,
       ),
       body: RefreshIndicator(
         onRefresh: fetchOrders,
