@@ -128,7 +128,6 @@ class _RealTimeMapPageState extends State<RealTimeMapPage>
     }
   }
 
-  // เพิ่มฟังก์ชันโหลดพิกัดจุดรับ-ส่ง
   Future<void> _loadOrderLocations() async {
     try {
       final response = await http.get(
@@ -137,20 +136,23 @@ class _RealTimeMapPageState extends State<RealTimeMapPage>
           'Content-Type': 'application/json',
         },
       );
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
         // Validate data structure
-        if (data['pickupLocation'] == null ||
-            data['deliveryLocation'] == null) {
+        final pickupLocation = data['pickupLocation'];
+        final deliveryLocation = data['deliveryLocation'];
+
+        if (pickupLocation == null || deliveryLocation == null) {
           throw Exception('Missing location data');
         }
 
         // Validate coordinates
-        final pickupLat = data['pickupLocation']['latitude'];
-        final pickupLng = data['pickupLocation']['longitude'];
-        final deliveryLat = data['deliveryLocation']['latitude'];
-        final deliveryLng = data['deliveryLocation']['longitude'];
+        final pickupLat = pickupLocation['latitude'];
+        final pickupLng = pickupLocation['longitude'];
+        final deliveryLat = deliveryLocation['latitude'];
+        final deliveryLng = deliveryLocation['longitude'];
 
         if (pickupLat == null ||
             pickupLng == null ||
@@ -170,53 +172,12 @@ class _RealTimeMapPageState extends State<RealTimeMapPage>
             double.parse(deliveryLng.toString()),
           );
 
-          // Update map to show both locations
           if (_mapReady && _mapController != null) {
-            // Calculate center point between all locations
-            final centerLat = (_pickupLocation!.latitude +
-                    _deliveryLocation!.latitude +
-                    _currentPosition.latitude) /
-                3;
-            final centerLng = (_pickupLocation!.longitude +
-                    _deliveryLocation!.longitude +
-                    _currentPosition.longitude) /
-                3;
-
-            // Calculate appropriate zoom level
-            double maxLat = [
-              _pickupLocation!.latitude,
-              _deliveryLocation!.latitude,
-              _currentPosition.latitude
-            ].reduce(max);
-            double minLat = [
-              _pickupLocation!.latitude,
-              _deliveryLocation!.latitude,
-              _currentPosition.latitude
-            ].reduce(min);
-            double maxLng = [
-              _pickupLocation!.longitude,
-              _deliveryLocation!.longitude,
-              _currentPosition.longitude
-            ].reduce(max);
-            double minLng = [
-              _pickupLocation!.longitude,
-              _deliveryLocation!.longitude,
-              _currentPosition.longitude
-            ].reduce(min);
-
-            // Calculate zoom level based on the distance between points
-            double latZoom = log(360 / (maxLat - minLat)) / log(2);
-            double lngZoom = log(360 / (maxLng - minLng)) / log(2);
-            double zoom =
-                min(latZoom, lngZoom) - 1; // Subtract 1 for some padding
-
-            // Limit zoom level to reasonable bounds
-            zoom = zoom.clamp(5.0, 15.0);
-
-            // Move map to show all points
-            _mapController.move(LatLng(centerLat, centerLng), zoom);
+            _updateMapView();
           }
         });
+      } else if (response.statusCode == 404) {
+        throw Exception('Order location not found');
       } else {
         throw Exception('Failed to load locations: ${response.statusCode}');
       }
@@ -227,6 +188,52 @@ class _RealTimeMapPageState extends State<RealTimeMapPage>
             "Error: ${e.toString()}");
       }
     }
+  }
+
+// Helper method to update map view
+  void _updateMapView() {
+    // Calculate center point between all locations
+    final centerLat = (_pickupLocation!.latitude +
+            _deliveryLocation!.latitude +
+            _currentPosition.latitude) /
+        3;
+    final centerLng = (_pickupLocation!.longitude +
+            _deliveryLocation!.longitude +
+            _currentPosition.longitude) /
+        3;
+
+    // Calculate appropriate zoom level
+    double maxLat = [
+      _pickupLocation!.latitude,
+      _deliveryLocation!.latitude,
+      _currentPosition.latitude
+    ].reduce(max);
+    double minLat = [
+      _pickupLocation!.latitude,
+      _deliveryLocation!.latitude,
+      _currentPosition.latitude
+    ].reduce(min);
+    double maxLng = [
+      _pickupLocation!.longitude,
+      _deliveryLocation!.longitude,
+      _currentPosition.longitude
+    ].reduce(max);
+    double minLng = [
+      _pickupLocation!.longitude,
+      _deliveryLocation!.longitude,
+      _currentPosition.longitude
+    ].reduce(min);
+
+    // Calculate zoom level based on the distance between points
+    double latZoom = log(360 / (maxLat - minLat)) / log(2);
+    double lngZoom = log(360 / (maxLng - minLng)) / log(2);
+    double zoom = min(latZoom, lngZoom) - 1; // Subtract 1 for some padding
+
+    // Limit zoom level to reasonable bounds
+    zoom = zoom.clamp(5.0, 15.0);
+
+    // Move map to show all points
+    _mapController.move(LatLng(centerLat, centerLng), zoom);
   }
 
   void _getUserId() async {

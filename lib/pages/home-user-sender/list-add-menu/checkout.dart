@@ -19,6 +19,13 @@ class CheckoutPage extends StatefulWidget {
 class _CheckoutPageState extends State<CheckoutPage> {
   File? _image;
   final TextEditingController _imageController = TextEditingController();
+  bool _isUsingDefaultLocation = false;
+
+  // Default location if recipient location is null
+  static const Map<String, double> defaultLocation = {
+    "latitude": 16.2466283,
+    "longitude": 103.252185,
+  };
 
   Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
@@ -27,8 +34,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     if (pickedFile != null) {
       setState(() {
         _image = File(pickedFile.path);
-        _imageController.text =
-            pickedFile.path.split('/').last; // แสดงชื่อไฟล์ในช่อง TextField
+        _imageController.text = pickedFile.path.split('/').last;
       });
     }
   }
@@ -39,8 +45,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
         .toList();
 
     for (var order in ordersToDelete) {
-      final String deleteUrl =
-          'https://back-deliverys.onrender.com/api/orders/${order.id}';
       final String deleteOrder =
           'http://back-deliverys.onrender.com/api/orders/del/${order.id}';
 
@@ -58,60 +62,88 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
   }
 
+  void _showLocationWarning() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'ไม่พบข้อมูลตำแหน่งผู้รับ กำลังใช้ตำแหน่งเริ่มต้น',
+          style: GoogleFonts.itim(),
+        ),
+        duration: const Duration(seconds: 5),
+        backgroundColor: Colors.orange,
+        action: SnackBarAction(
+          label: 'เข้าใจแล้ว',
+          textColor: Colors.white,
+          onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
+        ),
+      ),
+    );
+  }
+
   Future<void> createOrder(BuildContext context) async {
     final String baseUrl = 'http://192.168.0.200:8081/api/orders/';
     List<Map<String, dynamic>> items = [];
     double totalAmount = 0;
     Map<String, dynamic> recipientData = {};
-    Map<String, dynamic> LocationData = {};
-    Map<String, dynamic> LocationData1 = {};
+    Map<String, double> recipientLocation = {};
+    Map<String, double> pickupLocation = {
+      "latitude": 16.2466083,
+      "longitude": 103.252,
+    };
 
-    for (var order in widget.cartOrders) {
-      var recipient = order.recipient;
+    // ดึงข้อมูลจาก order แรกที่มี
+    if (widget.cartOrders.isNotEmpty) {
+      var firstOrder = widget.cartOrders.first;
+      var recipient = firstOrder.recipient;
 
-      if (recipientData.isEmpty) {
-        recipientData = {
-          "name": recipient.name,
-          "address": recipient.address,
-          "phone": recipient.phone
+      // ตั้งค่าข้อมูลผู้รับและตำแหน่ง - ใช้ null safety
+      if (recipient.location != null) {
+        recipientLocation = {
+          "latitude": recipient.location!.latitude,
+          "longitude": recipient.location!.longitude,
         };
+        _isUsingDefaultLocation = false;
+      } else {
+        // ใช้ตำแหน่งเริ่มต้นถ้าไม่มีข้อมูลตำแหน่ง
+        recipientLocation = defaultLocation;
+        _isUsingDefaultLocation = true;
+        log('Warning: Using default location as recipient location is null');
+        _showLocationWarning();
       }
 
-      if (LocationData.isEmpty) {
-        LocationData = {
-          "latitude": 16.2466083,
-          "longitude": 103.252,
-        };
-      }
+      recipientData = {
+        "name": recipient.name,
+        "address": recipient.address,
+        "phone": recipient.phone,
+        "location": recipientLocation
+      };
 
-      if (LocationData1.isEmpty) {
-        LocationData1 = {
-          "latitude": 16.2466283,
-          "longitude": 103.252185,
-        };
-      }
-
-      for (var item in order.items) {
-        if (item.orders == 0) {
-          items.add({
-            'orders': "3",
-            'name': item.name,
-            'quantity': item.quantity,
-            'price': item.price,
-          });
-          double itemTotalPrice = (item.price * item.quantity).toDouble();
-          totalAmount += itemTotalPrice; // คำนวณราคาทั้งหมด
+      // รวบรวมรายการสินค้าและคำนวณราคารวม
+      for (var order in widget.cartOrders) {
+        for (var item in order.items) {
+          if (item.orders == 0) {
+            items.add({
+              'orders': "3",
+              'name': item.name,
+              'quantity': item.quantity,
+              'price': item.price,
+            });
+            double itemTotalPrice = (item.price * item.quantity).toDouble();
+            totalAmount += itemTotalPrice;
+          }
         }
       }
     }
 
     final orderData = {
+      'sender': "6717acc4bccc05d91fafb7bd",
       'recipient': recipientData,
       'items': items,
       'totalAmount': totalAmount,
-      "sender": "6717acc4bccc05d91fafb7bd",
-      "pickupLocation": LocationData,
-      "deliveryLocation": LocationData1
+      'pickupLocation': pickupLocation,
+      'deliveryLocation': recipientLocation
     };
 
     try {
@@ -134,7 +166,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
         log('Failed to create order: ${response.body}');
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to create order')),
+            SnackBar(
+              content:
+                  Text('ไม่สามารถสร้างรายการได้', style: GoogleFonts.itim()),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
@@ -142,7 +178,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
       log('Error creating order: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error creating order')),
+          SnackBar(
+            content: Text('เกิดข้อผิดพลาดในการสร้างรายการ',
+                style: GoogleFonts.itim()),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -160,7 +200,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       for (var item in order.items) {
         if (item.orders == 0) {
           double itemTotalPrice = (item.price * item.quantity).toDouble();
-          totalAmount += itemTotalPrice; // คำนวณราคารวม
+          totalAmount += itemTotalPrice;
         }
       }
     }
@@ -172,6 +212,23 @@ class _CheckoutPageState extends State<CheckoutPage> {
       ),
       body: Column(
         children: [
+          if (_isUsingDefaultLocation)
+            Container(
+              color: Colors.orange.shade100,
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'กำลังใช้ตำแหน่งเริ่มต้นเนื่องจากไม่พบข้อมูลตำแหน่งผู้รับ',
+                      style: GoogleFonts.itim(color: Colors.orange[900]),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(16.0),

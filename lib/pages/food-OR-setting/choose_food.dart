@@ -29,15 +29,12 @@ class _FoodOrderComponentState extends State<FoodOrderComponent> {
     _getUserData();
   }
 
-  // ฟังก์ชันดึง userId และข้อมูลผู้ใช้
   Future<void> _getUserData() async {
     try {
-      // ดึง userId จาก SharedPreferences
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? storedUserId = prefs.getString('userId');
 
       if (storedUserId != null) {
-        // เรียก API เพื่อดึงข้อมูลผู้ใช้
         final response = await http.get(
           Uri.parse('${getUserById}/$storedUserId'),
           headers: {
@@ -74,7 +71,6 @@ class _FoodOrderComponentState extends State<FoodOrderComponent> {
     }
   }
 
-  // ฟังก์ชันสร้างคำสั่งซื้อ
   Future<void> createOrder() async {
     if (userId == null || userData == null) {
       setState(() {
@@ -106,9 +102,15 @@ class _FoodOrderComponentState extends State<FoodOrderComponent> {
         "name": userData!['name'] ?? '',
         "address": userData!['address'] ?? '',
         "phone": userData!['phone'] ?? '',
+        "location": {
+          // เพิ่ม location ในข้อมูลผู้รับ
+          "latitude": userGpsLocation['latitude'],
+          "longitude": userGpsLocation['longitude']
+        }
       },
       "items": [
         {
+          "orders": 1, // เพิ่ม field orders ตาม schema
           "name": widget.selectedFood.name,
           "quantity": quantity,
           "price": widget.selectedFood.price,
