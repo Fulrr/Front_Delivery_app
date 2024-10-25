@@ -46,7 +46,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
     for (var order in ordersToDelete) {
       final String deleteOrder =
-          'http://back-deliverys.onrender.com/api/orders/del/${order.id}';
+          'https://back-deliverys.onrender.com/api/orders/del/${order.id}';
 
       try {
         final response = await http.delete(Uri.parse(deleteOrder));
@@ -83,7 +83,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   Future<void> createOrder(BuildContext context) async {
-    final String baseUrl = 'http://192.168.0.200:8081/api/orders/';
+    final String baseUrl = 'https://back-deliverys.onrender.com/api/orders/';
     List<Map<String, dynamic>> items = [];
     double totalAmount = 0;
     Map<String, dynamic> recipientData = {};

@@ -256,7 +256,7 @@ class UserRegistration {
 
 // API Service
 class UserRegistrationService {
-  static const String baseUrl = 'http://192.168.0.200:8081/api';
+  static const String baseUrl = 'https://back-deliverys.onrender.com/api';
 
   Future<Map<String, dynamic>> registerUser(
       UserRegistration registration) async {

@@ -34,7 +34,7 @@ class _HomesenderPageState extends State<HomesenderPage> {
   String _userName = '';
   String _userImage = '';
 
-  final String url = 'http://192.168.0.200:8081/api/orders/';
+  final String url = 'https://back-deliverys.onrender.com/api/orders/';
 
   @override
   void initState() {

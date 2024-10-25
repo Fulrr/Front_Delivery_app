@@ -53,7 +53,7 @@ class _cartUserState extends State<cartUser> {
 
     try {
       final response =
-          await http.get(Uri.parse('http://192.168.0.200:8081/api/orders/'));
+          await http.get(Uri.parse('https://back-deliverys.onrender.com/api/orders/'));
       if (response.statusCode == 200) {
         List<dynamic> allOrders = json.decode(response.body);
         setState(() {

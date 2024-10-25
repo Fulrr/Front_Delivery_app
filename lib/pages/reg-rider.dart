@@ -107,7 +107,7 @@ class _SignUpRiderState extends State<SignUpRider> {
       // Create multipart request
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://192.168.0.200:8081/api/users/registration'),
+        Uri.parse('https://back-deliverys.onrender.com/api/users/registration'),
       );
 
       // Add all required fields with explicit type conversion
